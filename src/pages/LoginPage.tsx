@@ -31,9 +31,37 @@ export function LoginPage() {
     setLoading(true)
 
     try {
+      console.log('=== Login Debug Start ===')
+      console.log('Sending login request with:', { email })
+      
       const response = await api.post('/api/v1/auth/login', { email, password })
+      
+      console.log('API Response:', response)
+      console.log('Response data:', response.data)
+      console.log('Response data keys:', Object.keys(response.data))
+      
       const { accessToken } = response.data
-      login(accessToken, { id: 1, email, name: email.split('@')[0], role: 'USER' })
+      console.log('Extracted accessToken:', accessToken ? 'Token exists (length: ' + accessToken.length + ')' : 'Token is NULL/UNDEFINED')
+      
+      if (!accessToken) {
+        throw new Error('No accessToken in response')
+      }
+      
+      const userData = { id: 1, email, name: email.split('@')[0], role: 'USER' }
+      console.log('User data to store:', userData)
+      
+      console.log('Calling login function...')
+      login(accessToken, userData)
+      console.log('Login function called')
+      
+      // Verify store state
+      const storeState = JSON.parse(localStorage.getItem('auth-storage') || '{}')
+      console.log('Store state after login:', storeState)
+      console.log('Token in storage:', storeState.state?.token ? 'EXISTS' : 'NULL')
+      console.log('User in storage:', storeState.state?.user ? 'EXISTS' : 'NULL')
+      
+      console.log('=== Login Debug End ===')
+      
       navigate('/dashboard')
     } catch (err: unknown) {
       console.error('Login error:', err)
