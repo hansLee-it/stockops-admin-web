@@ -23,8 +23,13 @@ const api = axios.create({
 /**
  * Request interceptor that attaches JWT token to Authorization header.
  * Retrieves token from Zustand auth store.
+ * Excludes login endpoint from adding Authorization header.
  */
 api.interceptors.request.use((config) => {
+  // Don't add Authorization header to login endpoint
+  if (config.url === '/api/v1/auth/login') {
+    return config
+  }
   const token = useAuthStore.getState().token
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
