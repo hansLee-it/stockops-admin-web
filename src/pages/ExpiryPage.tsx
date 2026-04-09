@@ -23,7 +23,7 @@ async function fetchExpiryAlerts(filters?: { level?: AlertLevel; includeAcknowle
   if (filters?.level) params.append('level', filters.level)
   if (filters?.includeAcknowledged) params.append('includeAcknowledged', 'true')
   
-  const response = await api.get<ExpiryAlert[]>('/api/v1/alerts/expiry', { params })
+  const response = await api.get<ExpiryAlert[]>('/v1/alerts/expiry', { params })
   return response.data
 }
 
@@ -33,7 +33,7 @@ async function fetchExpiryAlerts(filters?: { level?: AlertLevel; includeAcknowle
  * @returns Promise resolving to alert summary counts
  */
 async function fetchExpiryAlertSummary() {
-  const response = await api.get<ExpiryAlertSummary>('/api/v1/alerts/expiry/summary')
+  const response = await api.get<ExpiryAlertSummary>('/v1/alerts/expiry/summary')
   return response.data
 }
 
@@ -44,7 +44,7 @@ async function fetchExpiryAlertSummary() {
  * @returns Promise resolving on success
  */
 async function acknowledgeAlert(alertId: number) {
-  await api.post(`/api/v1/alerts/${alertId}/acknowledge`)
+  await api.post(`/v1/alerts/${alertId}/acknowledge`)
 }
 
 /**

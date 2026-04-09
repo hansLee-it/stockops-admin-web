@@ -29,14 +29,14 @@ export function OutboundPage() {
     queryKey: ['outbounds', statusFilter],
     queryFn: async () => {
       const params = statusFilter ? `?status=${statusFilter}` : ''
-      const response = await api.get<OutboundDTO[]>(`/api/v1/outbounds${params}`)
+      const response = await api.get<OutboundDTO[]>(`/v1/outbounds${params}`)
       return response.data
     },
   })
 
   const confirmMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post<OutboundDTO>(`/api/v1/outbounds/${id}/confirm`)
+      const response = await api.post<OutboundDTO>(`/v1/outbounds/${id}/confirm`)
       return response.data
     },
     onSuccess: () => {
@@ -187,14 +187,14 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const response = await api.get<{ content: ProductDTO[] }>('/api/v1/products')
+      const response = await api.get<{ content: ProductDTO[] }>('/v1/products')
       return response.data.content || []
     },
   })
 
   const createMutation = useMutation({
     mutationFn: async (request: CreateOutboundRequest) => {
-      const response = await api.post<OutboundDTO>('/api/v1/outbounds', request)
+      const response = await api.post<OutboundDTO>('/v1/outbounds', request)
       return response.data
     },
     onSuccess: (data) => {
@@ -208,7 +208,7 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
 
   const addItemMutation = useMutation({
     mutationFn: async ({ outboundId, request }: { outboundId: number; request: AddOutboundItemRequest }) => {
-      const response = await api.post<OutboundItemDTO>(`/api/v1/outbounds/${outboundId}/items`, request)
+      const response = await api.post<OutboundItemDTO>(`/v1/outbounds/${outboundId}/items`, request)
       return response.data
     },
   })
@@ -400,7 +400,7 @@ function OutboundDetailModal({ outbound, onClose }: { outbound: OutboundDTO; onC
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['outbound-items', outbound.id],
     queryFn: async () => {
-      const response = await api.get<OutboundItemDTO[]>(`/api/v1/outbounds/${outbound.id}/items`)
+      const response = await api.get<OutboundItemDTO[]>(`/v1/outbounds/${outbound.id}/items`)
       return response.data
     },
   })

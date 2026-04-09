@@ -34,7 +34,7 @@ export function LoginPage() {
       console.log('=== Login Debug Start ===')
       console.log('Sending login request with:', { email })
       
-      const response = await api.post('/api/v1/auth/login', { email, password })
+      const response = await api.post('/v1/auth/login', { email, password })
       
       console.log('API Response:', response)
       console.log('Response data:', response.data)
