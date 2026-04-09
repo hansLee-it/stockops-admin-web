@@ -36,7 +36,22 @@ export function LoginPage() {
       login(accessToken, { id: 1, email, name: email.split('@')[0], role: 'USER' })
       navigate('/dashboard')
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Login failed'
+      console.error('Login error:', err)
+      let message = 'Login failed'
+      if (err && typeof err === 'object') {
+        if ('response' in err && err.response && typeof err.response === 'object') {
+          const response = err.response as { data?: { message?: string }; status?: number }
+          if ('data' in response && response.data && typeof response.data === 'object') {
+            if ('message' in response.data && response.data.message) {
+              message = response.data.message
+            } else {
+              message = `Server error: ${response.status}`
+            }
+          }
+        } else if ('message' in err && typeof (err as Error).message === 'string') {
+          message = (err as Error).message
+        }
+      }
       setError(message)
     } finally {
       setLoading(false)
