@@ -14,6 +14,10 @@ import { InboundPage } from '@/pages/InboundPage'
 import { OutboundPage } from '@/pages/OutboundPage'
 import { ExpiryPage } from '@/pages/ExpiryPage'
 import { LocationsPage } from '@/pages/LocationsPage'
+import { SettingsPage } from '@/pages/SettingsPage'
+import { EnvironmentPage } from '@/pages/EnvironmentPage'
+import { AIFeaturesPage } from '@/pages/AIFeaturesPage'
+import { AddonsPage } from '@/pages/AddonsPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -21,12 +25,16 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
  * Main App component with route configuration.
  * - /login: Public login page
  * - /: Protected routes (requires authentication)
- * - /dashboard: Dashboard page (protected)
- * - /inventory: Inventory page (protected, placeholder)
- * - /inbound: Inbound page (protected, placeholder)
- * - /outbound: Outbound page (protected, placeholder)
- * - /locations: Locations page (protected, placeholder)
- * - /expiry: Expiry management page (protected)
+ * - /dashboard: Dashboard page
+ * - /inventory: Inventory page
+ * - /inbound: Inbound page
+ * - /outbound: Outbound page
+ * - /locations: Locations page
+ * - /expiry: Expiry management page
+ * - /settings: Settings page
+ * - /environment: Environment monitoring page
+ * - /ai: AI features page
+ * - /addons: Add-ons marketplace page
  *
  * @returns App JSX element with router configuration
  */
@@ -50,6 +58,10 @@ function App() {
           <Route path="outbound" element={<OutboundPage />} />
           <Route path="locations" element={<LocationsPage />} />
           <Route path="expiry" element={<ExpiryPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="environment" element={<EnvironmentPage />} />
+          <Route path="ai" element={<AIFeaturesPage />} />
+          <Route path="addons" element={<AddonsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -11,21 +11,15 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { 
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, 
-  MapPin, LogOut, Clock, Menu, X, Bell
+  MapPin, LogOut, Clock, Menu, X, Bell, Settings, Thermometer, Bot, Puzzle
 } from 'lucide-react'
 
-/**
- * Navigation item configuration.
- */
 interface NavItem {
   to: string
   label: string
   icon: React.ComponentType<{ className?: string }>
 }
 
-/**
- * Navigation menu items.
- */
 const navItems: NavItem[] = [
   { to: '/dashboard', label: '대시보드', icon: LayoutDashboard },
   { to: '/inventory', label: '재고 관리', icon: Package },
@@ -33,14 +27,12 @@ const navItems: NavItem[] = [
   { to: '/outbound', label: '출고 관리', icon: ArrowUpFromLine },
   { to: '/locations', label: '위치 관리', icon: MapPin },
   { to: '/expiry', label: '유통기한', icon: Clock },
+  { to: '/environment', label: '환경 모니터링', icon: Thermometer },
+  { to: '/ai', label: 'AI 기능', icon: Bot },
+  { to: '/addons', label: 'Add-on 마켓', icon: Puzzle },
+  { to: '/settings', label: '설정', icon: Settings },
 ]
 
-/**
- * Main layout with sidebar navigation and content area.
- * Uses React Router Outlet for nested routes.
- *
- * @returns Layout JSX element with sidebar and content area
- */
 export function MainLayout() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
@@ -59,7 +51,6 @@ export function MainLayout() {
 
   return (
     <div className="min-h-screen flex bg-bg-secondary">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -67,14 +58,12 @@ export function MainLayout() {
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
         w-64 bg-bg-dark text-white flex flex-col
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Sidebar Header */}
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">📦 StockOps</h1>
@@ -86,7 +75,6 @@ export function MainLayout() {
             </button>
           </div>
           
-          {/* Warehouse Selector */}
           <div className="mt-4">
             <select className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm">
               <option value="main">🏪 본점</option>
@@ -96,7 +84,6 @@ export function MainLayout() {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 p-4 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.to
@@ -118,7 +105,6 @@ export function MainLayout() {
           })}
         </nav>
 
-        {/* Sidebar Footer */}
         <div className="p-4 border-t border-white/10">
           <div className="flex items-center justify-between text-sm text-white/70 mb-3">
             <span>{user?.email || 'admin@stockops.com'}</span>
@@ -133,9 +119,7 @@ export function MainLayout() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
         <header className="bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-4">
             <button 
@@ -164,7 +148,6 @@ export function MainLayout() {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 p-6 overflow-auto">
           <Outlet />
         </main>
