@@ -84,8 +84,11 @@ export function InventoryPage() {
               >
                 <option value="all">All Status</option>
                 <option value="ACTIVE">Active</option>
+                <option value="RESERVED">Reserved</option>
                 <option value="QUARANTINE">Quarantine</option>
                 <option value="EXPIRED">Expired</option>
+                <option value="EXPIRING_SOON">Expiring Soon</option>
+                <option value="OUT_OF_STOCK">Out of Stock</option>
               </select>
             </div>
           </div>
@@ -238,14 +241,23 @@ export function InventoryPage() {
 }
 
 /**
- * Determines inventory status based on expiry date and quantity.
+ * Determines inventory status based on backend status and expiry date.
+ * Backend status takes precedence, but expired items are always shown as EXPIRED.
  */
 function getInventoryStatus(item: Inventory): string {
+  if (item.status === 'QUARANTINE' || item.status === 'EXPIRED') {
+    return item.status
+  }
+
   const today = new Date()
   const expiryDate = new Date(item.expiryDate)
 
   if (expiryDate < today) {
     return 'EXPIRED'
+  }
+
+  if (item.status === 'RESERVED') {
+    return 'RESERVED'
   }
 
   if (item.quantity === 0) {
@@ -267,6 +279,8 @@ function getStatusColor(status: string): string {
   switch (status) {
     case 'ACTIVE':
       return 'bg-success/10 text-success'
+    case 'RESERVED':
+      return 'bg-info/10 text-info'
     case 'EXPIRING_SOON':
       return 'bg-warning/10 text-warning'
     case 'EXPIRED':

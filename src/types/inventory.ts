@@ -39,6 +39,8 @@ export interface Inventory {
   quantity: number
   /** Reserved quantity */
   reservedQuantity: number
+  /** Inventory status */
+  status: InventoryStatus
   /** Creation timestamp (ISO datetime string) */
   createdAt: string
   /** Last update timestamp (ISO datetime string) */

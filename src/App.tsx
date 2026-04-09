@@ -13,6 +13,7 @@ import { InventoryPage } from '@/pages/InventoryPage'
 import { InboundPage } from '@/pages/InboundPage'
 import { OutboundPage } from '@/pages/OutboundPage'
 import { ExpiryPage } from '@/pages/ExpiryPage'
+import { LocationsPage } from '@/pages/LocationsPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -47,7 +48,7 @@ function App() {
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="inbound" element={<InboundPage />} />
           <Route path="outbound" element={<OutboundPage />} />
-          <Route path="locations" element={<div className="text-neutral-900">Locations Page</div>} />
+          <Route path="locations" element={<LocationsPage />} />
           <Route path="expiry" element={<ExpiryPage />} />
         </Route>
       </Routes>
