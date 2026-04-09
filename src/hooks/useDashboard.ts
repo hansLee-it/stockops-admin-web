@@ -24,7 +24,7 @@ export function useDashboardSummary(): UseQueryResult<DashboardSummary, AxiosErr
   return useQuery({
     queryKey: ['dashboard', 'summary'],
     queryFn: async () => {
-      const response = await api.get<DashboardSummary>('/api/v1/dashboard/summary')
+      const response = await api.get<DashboardSummary>('/v1/dashboard/summary')
       return response.data
     },
   })
@@ -42,7 +42,7 @@ export function useDashboardTransactions(limit: number = 5): UseQueryResult<Inve
   return useQuery({
     queryKey: ['dashboard', 'transactions', limit],
     queryFn: async () => {
-      const response = await api.get<InventoryTransaction[]>('/api/v1/inventory/transactions/recent')
+      const response = await api.get<InventoryTransaction[]>('/v1/inventory/transactions/recent')
       return response.data.slice(0, limit)
     },
   })

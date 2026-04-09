@@ -7,7 +7,7 @@
  */
 
 /**
- * Dashboard summary data from /api/v1/dashboard/summary.
+ * Dashboard summary data from /v1/dashboard/summary.
  * Contains key metrics for the dashboard overview.
  */
 export interface DashboardSummary {

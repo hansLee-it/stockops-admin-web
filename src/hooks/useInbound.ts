@@ -25,7 +25,7 @@ export function useInbounds(status?: string): UseQueryResult<Inbound[], AxiosErr
     queryKey: ['inbounds', status],
     queryFn: async () => {
       const params = status ? `?status=${status}` : ''
-      const response = await api.get<Inbound[]>(`/api/v1/inbounds${params}`)
+      const response = await api.get<Inbound[]>(`/v1/inbounds${params}`)
       return response.data
     },
   })
@@ -44,7 +44,7 @@ export function useInboundById(id: number | null): UseQueryResult<Inbound, Axios
     queryKey: ['inbound', id],
     queryFn: async () => {
       if (!id) throw new Error('Inbound ID is required')
-      const response = await api.get<Inbound>(`/api/v1/inbounds/${id}`)
+      const response = await api.get<Inbound>(`/v1/inbounds/${id}`)
       return response.data
     },
     enabled: id !== null,
@@ -64,7 +64,7 @@ export function useInboundItems(inboundId: number | null): UseQueryResult<Inboun
     queryKey: ['inbound', inboundId, 'items'],
     queryFn: async () => {
       if (!inboundId) throw new Error('Inbound ID is required')
-      const response = await api.get<InboundItem[]>(`/api/v1/inbounds/${inboundId}/items`)
+      const response = await api.get<InboundItem[]>(`/v1/inbounds/${inboundId}/items`)
       return response.data
     },
     enabled: inboundId !== null,
@@ -83,7 +83,7 @@ export function useCreateInbound(): UseMutationResult<Inbound, AxiosError, Creat
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (request: CreateInboundRequest) => {
-      const response = await api.post<Inbound>('/api/v1/inbounds', request)
+      const response = await api.post<Inbound>('/v1/inbounds', request)
       return response.data
     },
     onSuccess: () => {
@@ -105,7 +105,7 @@ export function useAddInboundItem(inboundId: number): UseMutationResult<InboundI
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (request: AddInboundItemRequest) => {
-      const response = await api.post<InboundItem>(`/api/v1/inbounds/${inboundId}/items`, request)
+      const response = await api.post<InboundItem>(`/v1/inbounds/${inboundId}/items`, request)
       return response.data
     },
     onSuccess: () => {
@@ -127,7 +127,7 @@ export function useConfirmInbound(): UseMutationResult<Inbound, AxiosError, numb
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post<Inbound>(`/api/v1/inbounds/${id}/confirm`)
+      const response = await api.post<Inbound>(`/v1/inbounds/${id}/confirm`)
       return response.data
     },
     onSuccess: () => {

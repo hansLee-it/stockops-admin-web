@@ -25,7 +25,7 @@ export function useLocations(type?: string): UseQueryResult<Location[], AxiosErr
     queryKey: ['locations', type],
     queryFn: async () => {
       const params = type ? `?type=${type}` : ''
-      const response = await api.get<Location[]>(`/api/v1/locations${params}`)
+      const response = await api.get<Location[]>(`/v1/locations${params}`)
       return response.data
     },
   })
@@ -44,7 +44,7 @@ export function useLocationById(id: number | null): UseQueryResult<Location, Axi
     queryKey: ['location', id],
     queryFn: async () => {
       if (!id) throw new Error('Location ID is required')
-      const response = await api.get<Location>(`/api/v1/locations/${id}`)
+      const response = await api.get<Location>(`/v1/locations/${id}`)
       return response.data
     },
     enabled: id !== null,

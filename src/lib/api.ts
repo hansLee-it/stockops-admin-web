@@ -28,7 +28,7 @@ const api = axios.create({
  */
 api.interceptors.request.use((config) => {
   // Don't add Authorization header to login endpoint
-  if (config.url === '/api/v1/auth/login') {
+  if (config.url === '/v1/auth/login') {
     return config
   }
   const token = useAuthStore.getState().token

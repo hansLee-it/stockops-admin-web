@@ -31,7 +31,7 @@ export function useInventory(filters?: InventoryFilters): UseQueryResult<Invento
       if (filters?.page !== undefined) params.append('page', filters.page.toString())
       if (filters?.size) params.append('size', filters.size.toString())
 
-      const response = await api.get<Inventory[]>(`/api/v1/inventory?${params.toString()}`)
+      const response = await api.get<Inventory[]>(`/v1/inventory?${params.toString()}`)
       return response.data
     },
   })
@@ -50,7 +50,7 @@ export function useInventoryById(id: number | null): UseQueryResult<Inventory, A
     queryKey: ['inventory', id],
     queryFn: async () => {
       if (!id) throw new Error('Inventory ID is required')
-      const response = await api.get<Inventory>(`/api/v1/inventory/${id}`)
+      const response = await api.get<Inventory>(`/v1/inventory/${id}`)
       return response.data
     },
     enabled: id !== null,
@@ -76,7 +76,7 @@ export function useTransactionHistory(filters?: TransactionFilters): UseQueryRes
       if (filters?.page !== undefined) params.append('page', filters.page.toString())
       if (filters?.size) params.append('size', filters.size.toString())
 
-      const response = await api.get<InventoryTransaction[]>(`/api/v1/inventory/transactions?${params.toString()}`)
+      const response = await api.get<InventoryTransaction[]>(`/v1/inventory/transactions?${params.toString()}`)
       return response.data
     },
   })
@@ -93,7 +93,7 @@ export function useRecentTransactions(): UseQueryResult<InventoryTransaction[], 
   return useQuery({
     queryKey: ['transactions', 'recent'],
     queryFn: async () => {
-      const response = await api.get<InventoryTransaction[]>('/api/v1/inventory/transactions/recent')
+      const response = await api.get<InventoryTransaction[]>('/v1/inventory/transactions/recent')
       return response.data
     },
   })

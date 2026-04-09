@@ -15,7 +15,7 @@
 export type AlertLevel = 'CRITICAL' | 'WARNING' | 'NOTICE' | 'INFO'
 
 /**
- * Expiry alert response from /api/v1/alerts/expiry.
+ * Expiry alert response from /v1/alerts/expiry.
  */
 export interface ExpiryAlert {
   id: number
@@ -33,7 +33,7 @@ export interface ExpiryAlert {
 }
 
 /**
- * Expiry alert summary response from /api/v1/alerts/expiry/summary.
+ * Expiry alert summary response from /v1/alerts/expiry/summary.
  */
 export interface ExpiryAlertSummary {
   total: number

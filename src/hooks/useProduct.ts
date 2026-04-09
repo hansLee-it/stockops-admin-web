@@ -23,7 +23,7 @@ export function useProducts(): UseQueryResult<ProductDTO[], AxiosError> {
   return useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const response = await api.get<{ content: ProductDTO[] }>('/api/v1/products')
+      const response = await api.get<{ content: ProductDTO[] }>('/v1/products')
       return response.data.content
     },
   })
@@ -42,7 +42,7 @@ export function useProductById(id: number | null): UseQueryResult<ProductDTO, Ax
     queryKey: ['product', id],
     queryFn: async () => {
       if (!id) throw new Error('Product ID is required')
-      const response = await api.get<ProductDTO>(`/api/v1/products/${id}`)
+      const response = await api.get<ProductDTO>(`/v1/products/${id}`)
       return response.data
     },
     enabled: id !== null,
@@ -62,7 +62,7 @@ export function useProductByBarcode(barcode: string | null): UseQueryResult<Prod
     queryKey: ['product', 'barcode', barcode],
     queryFn: async () => {
       if (!barcode) throw new Error('Barcode is required')
-      const response = await api.get<ProductDTO>(`/api/v1/products/barcode/${barcode}`)
+      const response = await api.get<ProductDTO>(`/v1/products/barcode/${barcode}`)
       return response.data
     },
     enabled: barcode !== null && barcode.length > 0,
