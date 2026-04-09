@@ -8,7 +8,7 @@
 
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
-import { LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, MapPin, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, MapPin, LogOut, Clock } from 'lucide-react'
 
 /**
  * Navigation item configuration.
@@ -28,6 +28,7 @@ const navItems: NavItem[] = [
   { to: '/inbound', label: 'Inbound', icon: ArrowDownToLine },
   { to: '/outbound', label: 'Outbound', icon: ArrowUpFromLine },
   { to: '/locations', label: 'Locations', icon: MapPin },
+  { to: '/expiry', label: 'Expiry', icon: Clock },
 ]
 
 /**

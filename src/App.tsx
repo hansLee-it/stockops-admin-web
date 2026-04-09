@@ -9,6 +9,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { InventoryPage } from '@/pages/InventoryPage'
+import { InboundPage } from '@/pages/InboundPage'
+import { OutboundPage } from '@/pages/OutboundPage'
+import { ExpiryPage } from '@/pages/ExpiryPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -21,6 +25,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
  * - /inbound: Inbound page (protected, placeholder)
  * - /outbound: Outbound page (protected, placeholder)
  * - /locations: Locations page (protected, placeholder)
+ * - /expiry: Expiry management page (protected)
  *
  * @returns App JSX element with router configuration
  */
@@ -39,10 +44,11 @@ function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="inventory" element={<div className="text-neutral-900">Inventory Page</div>} />
-          <Route path="inbound" element={<div className="text-neutral-900">Inbound Page</div>} />
-          <Route path="outbound" element={<div className="text-neutral-900">Outbound Page</div>} />
+          <Route path="inventory" element={<InventoryPage />} />
+          <Route path="inbound" element={<InboundPage />} />
+          <Route path="outbound" element={<OutboundPage />} />
           <Route path="locations" element={<div className="text-neutral-900">Locations Page</div>} />
+          <Route path="expiry" element={<ExpiryPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
