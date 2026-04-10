@@ -15,9 +15,6 @@ import { OutboundPage } from '@/pages/OutboundPage'
 import { ExpiryPage } from '@/pages/ExpiryPage'
 import { LocationsPage } from '@/pages/LocationsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
-import { EnvironmentPage } from '@/pages/EnvironmentPage'
-import { AIFeaturesPage } from '@/pages/AIFeaturesPage'
-import { AddonsPage } from '@/pages/AddonsPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -32,9 +29,6 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
  * - /locations: Locations page
  * - /expiry: Expiry management page
  * - /settings: Settings page
- * - /environment: Environment monitoring page
- * - /ai: AI features page
- * - /addons: Add-ons marketplace page
  *
  * @returns App JSX element with router configuration
  */
@@ -59,9 +53,6 @@ function App() {
           <Route path="locations" element={<LocationsPage />} />
           <Route path="expiry" element={<ExpiryPage />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="environment" element={<EnvironmentPage />} />
-          <Route path="ai" element={<AIFeaturesPage />} />
-          <Route path="addons" element={<AddonsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

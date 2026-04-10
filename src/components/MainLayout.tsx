@@ -11,7 +11,8 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { 
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, 
-  MapPin, LogOut, Clock, Menu, X, Bell, Settings, Thermometer, Bot, Puzzle
+  MapPin, LogOut, Clock, Menu, X, Bell, Settings, Thermometer, Bot,
+  Building2, Warehouse
 } from 'lucide-react'
 
 interface NavItem {
@@ -22,14 +23,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { to: '/dashboard', label: '대시보드', icon: LayoutDashboard },
+  { to: '/centers', label: '센터 관리', icon: Building2 },
+  { to: '/warehouses', label: '창고 관리', icon: Warehouse },
   { to: '/inventory', label: '재고 관리', icon: Package },
   { to: '/inbound', label: '입고 관리', icon: ArrowDownToLine },
   { to: '/outbound', label: '출고 관리', icon: ArrowUpFromLine },
   { to: '/locations', label: '위치 관리', icon: MapPin },
+  { to: '/purchase-orders', label: '발주 관리', icon: Package },
   { to: '/expiry', label: '유통기한', icon: Clock },
-  { to: '/environment', label: '환경 모니터링', icon: Thermometer },
-  { to: '/ai', label: 'AI 기능', icon: Bot },
-  { to: '/addons', label: 'Add-on 마켓', icon: Puzzle },
   { to: '/settings', label: '설정', icon: Settings },
 ]
 
@@ -75,11 +76,16 @@ export function MainLayout() {
             </button>
           </div>
           
-          <div className="mt-4">
+          <div className="mt-4 space-y-2">
             <select className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm">
-              <option value="main">🏪 본점</option>
-              <option value="gangnam">🏪 강남점</option>
-              <option value="hongdae">🏪 홍대점</option>
+              <option value="">센터 선택</option>
+              <option value="1">🏢 강남센터</option>
+              <option value="2">🏢 서초센터</option>
+            </select>
+            <select className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm">
+              <option value="">창고 선택</option>
+              <option value="1">📦 강남 1창고</option>
+              <option value="2">📦 강남 2창고</option>
             </select>
           </div>
         </div>
