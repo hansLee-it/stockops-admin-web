@@ -15,6 +15,9 @@ import { OutboundPage } from '@/pages/OutboundPage'
 import { ExpiryPage } from '@/pages/ExpiryPage'
 import { LocationsPage } from '@/pages/LocationsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { CentersPage } from '@/pages/CentersPage'
+import { WarehousesPage } from '@/pages/WarehousesPage'
+import { PurchaseOrdersPage } from '@/pages/PurchaseOrdersPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -47,6 +50,9 @@ function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="centers" element={<CentersPage />} />
+          <Route path="warehouses" element={<WarehousesPage />} />
+          <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="inbound" element={<InboundPage />} />
           <Route path="outbound" element={<OutboundPage />} />

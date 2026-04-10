@@ -11,7 +11,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { 
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, 
-  MapPin, LogOut, Clock, Menu, X, Bell, Settings, Thermometer, Bot,
+  MapPin, LogOut, Clock, Menu, X, Bell, Settings,
   Building2, Warehouse
 } from 'lucide-react'
 
