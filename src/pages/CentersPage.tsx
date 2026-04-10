@@ -37,7 +37,7 @@ export function CentersPage() {
 
   const fetchCenters = async () => {
     try {
-      const response = await api.get('/api/v1/centers')
+      const response = await api.get('/v1/centers')
       setCenters(response.data)
     } catch (error) {
       console.error('Failed to fetch centers:', error)
@@ -50,9 +50,9 @@ export function CentersPage() {
     e.preventDefault()
     try {
       if (editingCenter) {
-        await api.put(`/api/v1/centers/${editingCenter.id}`, formData)
+        await api.put(`/v1/centers/${editingCenter.id}`, formData)
       } else {
-        await api.post('/api/v1/centers', formData)
+        await api.post('/v1/centers', formData)
       }
       fetchCenters()
       setShowModal(false)
@@ -77,7 +77,7 @@ export function CentersPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this center?')) return
     try {
-      await api.delete(`/api/v1/centers/${id}`)
+      await api.delete(`/v1/centers/${id}`)
       fetchCenters()
     } catch (error) {
       console.error('Failed to delete center:', error)

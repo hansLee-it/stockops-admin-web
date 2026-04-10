@@ -90,7 +90,7 @@ export function PurchaseOrdersPage() {
 
   const fetchCenters = async () => {
     try {
-      const response = await api.get('/api/v1/centers')
+      const response = await api.get('/v1/centers')
       setCenters(response.data)
     } catch (error) {
       console.error('Failed to fetch centers:', error)
@@ -99,7 +99,7 @@ export function PurchaseOrdersPage() {
 
   const fetchWarehousesByCenter = async (centerId: string) => {
     try {
-      const response = await api.get(`/api/v1/warehouses/center/${centerId}`)
+      const response = await api.get(`/v1/warehouses/center/${centerId}`)
       setWarehouses(response.data)
     } catch (error) {
       console.error('Failed to fetch warehouses:', error)
@@ -108,7 +108,7 @@ export function PurchaseOrdersPage() {
 
   const fetchPurchaseOrders = async () => {
     try {
-      const response = await api.get('/api/v1/purchase-orders')
+      const response = await api.get('/v1/purchase-orders')
       setPurchaseOrders(response.data)
     } catch (error) {
       console.error('Failed to fetch purchase orders:', error)
@@ -120,7 +120,7 @@ export function PurchaseOrdersPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await api.post('/api/v1/purchase-orders', null, {
+      await api.post('/v1/purchase-orders', null, {
         params: {
           centerId: formData.centerId,
           warehouseId: formData.warehouseId || null,
@@ -138,30 +138,30 @@ export function PurchaseOrdersPage() {
     try {
       switch (action) {
         case 'submit':
-          await api.post(`/api/v1/purchase-orders/${poId}/submit`)
+          await api.post(`/v1/purchase-orders/${poId}/submit`)
           break
         case 'accept':
-          await api.post(`/api/v1/purchase-orders/${poId}/accept`, null, {
+          await api.post(`/v1/purchase-orders/${poId}/accept`, null, {
             params: { erpReference: data?.erpReference || 'ERP-REF' }
           })
           break
         case 'reject':
-          await api.post(`/api/v1/purchase-orders/${poId}/reject`, null, {
+          await api.post(`/v1/purchase-orders/${poId}/reject`, null, {
             params: { reason: data?.reason || '재고 부족' }
           })
           break
         case 'cancel':
-          await api.post(`/api/v1/purchase-orders/${poId}/cancel`, null, {
+          await api.post(`/v1/purchase-orders/${poId}/cancel`, null, {
             params: { reason: data?.reason || '요청에 의한 취소' }
           })
           break
         case 'complete':
-          await api.post(`/api/v1/purchase-orders/${poId}/complete`)
+          await api.post(`/v1/purchase-orders/${poId}/complete`)
           break
       }
       fetchPurchaseOrders()
       if (selectedPO) {
-        const updated = await api.get(`/api/v1/purchase-orders/${poId}`)
+        const updated = await api.get(`/v1/purchase-orders/${poId}`)
         setSelectedPO(updated.data)
       }
     } catch (error) {

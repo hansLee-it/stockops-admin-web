@@ -48,7 +48,7 @@ export function WarehousesPage() {
 
   const fetchCenters = async () => {
     try {
-      const response = await api.get('/api/v1/centers')
+      const response = await api.get('/v1/centers')
       setCenters(response.data)
     } catch (error) {
       console.error('Failed to fetch centers:', error)
@@ -57,7 +57,7 @@ export function WarehousesPage() {
 
   const fetchWarehouses = async () => {
     try {
-      const response = await api.get('/api/v1/warehouses')
+      const response = await api.get('/v1/warehouses')
       setWarehouses(response.data)
     } catch (error) {
       console.error('Failed to fetch warehouses:', error)
@@ -70,9 +70,9 @@ export function WarehousesPage() {
     e.preventDefault()
     try {
       if (editingWarehouse) {
-        await api.put(`/api/v1/warehouses/${editingWarehouse.id}`, formData)
+        await api.put(`/v1/warehouses/${editingWarehouse.id}`, formData)
       } else {
-        await api.post(`/api/v1/warehouses/center/${formData.centerId}`, formData)
+        await api.post(`/v1/warehouses/center/${formData.centerId}`, formData)
       }
       fetchWarehouses()
       setShowModal(false)
@@ -98,7 +98,7 @@ export function WarehousesPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this warehouse?')) return
     try {
-      await api.delete(`/api/v1/warehouses/${id}`)
+      await api.delete(`/v1/warehouses/${id}`)
       fetchWarehouses()
     } catch (error) {
       console.error('Failed to delete warehouse:', error)

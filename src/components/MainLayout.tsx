@@ -6,12 +6,11 @@
  * @since 1.0
  */
 
-import { useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { 
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, 
-  MapPin, LogOut, Clock, Menu, X, Bell, Settings,
+  MapPin, LogOut, Clock, Bell, Settings,
   Building2, Warehouse
 } from 'lucide-react'
 
@@ -38,7 +37,6 @@ export function MainLayout() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -52,28 +50,10 @@ export function MainLayout() {
 
   return (
     <div className="min-h-screen flex bg-bg-secondary">
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-bg-dark text-white flex flex-col
-        transform transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+      <aside className="w-64 bg-bg-dark text-white flex flex-col">
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">📦 StockOps</h1>
-            <button 
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1 hover:bg-white/10 rounded"
-            >
-              <X className="w-6 h-6" />
-            </button>
           </div>
           
           <div className="mt-4 space-y-2">
@@ -97,7 +77,6 @@ export function MainLayout() {
               <Link
                 key={item.to}
                 to={item.to}
-                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 p-3 rounded-lg mb-1 transition-colors ${
                   isActive 
                     ? 'bg-primary-600 text-white' 
@@ -128,12 +107,6 @@ export function MainLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 hover:bg-neutral-100 rounded-lg"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
             <h1 className="text-xl font-semibold text-text-primary">
               {getPageTitle()}
             </h1>
