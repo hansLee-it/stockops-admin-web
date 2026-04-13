@@ -167,14 +167,17 @@ export function CentersPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">센터 코드 *</label>
-                <input
+               <input
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg disabled:bg-neutral-100 disabled:text-text-secondary disabled:cursor-not-allowed"
                   required
                   disabled={!!editingCenter}
                 />
+                {editingCenter && (
+                  <p className="mt-1 text-xs text-text-secondary">코드는 변경할 수 없습니다</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">센터명 *</label>
