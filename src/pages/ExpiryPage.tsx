@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Clock, AlertCircle, Info, CheckCircle } from 'lucide-react'
 import api from '@/lib/api'
 import type { ExpiryAlert, ExpiryAlertSummary, AlertLevel } from '@/types/expiry'
+import { EmptyState } from '@/components/common/EmptyState'
 
 /**
  * Fetches expiry alerts from the API.
@@ -163,12 +164,17 @@ export function ExpiryPage() {
       {/* Alerts Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {alertsLoading ? (
-          <div className="p-8 text-center text-neutral-500">Loading alerts...</div>
+          <EmptyState
+            title="Loading..."
+            description="Fetching expiry alerts"
+            variant="empty"
+          />
         ) : alerts.length === 0 ? (
-          <div className="p-8 text-center text-neutral-500">
-            <CheckCircle className="w-12 h-12 mx-auto mb-2 text-success" />
-            <p>No expiry alerts at this time.</p>
-          </div>
+          <EmptyState
+            title="No expiry alerts"
+            description="All products are within their expiration dates"
+            icon={CheckCircle}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">

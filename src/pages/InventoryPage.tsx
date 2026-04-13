@@ -11,6 +11,7 @@ import { InventoryAdjustModal } from '@/components/inventory/InventoryAdjustModa
 import { useInventory } from '@/hooks/useInventory'
 import type { Inventory } from '@/types/inventory'
 import { Search, Filter, Eye, History, Package, ChevronLeft, ChevronRight } from 'lucide-react'
+import { EmptyState } from '@/components/common/EmptyState'
 
 /**
  * Inventory page with table, search, filters, and pagination.
@@ -107,19 +108,28 @@ export function InventoryPage() {
           </div>
         </div>
 
-        {isLoading && (
-          <div className="p-8 text-center text-neutral-500">
-            Loading inventory...
-          </div>
-        )}
-
-        {error && (
-          <div className="p-4 bg-error/10 text-error rounded m-4">
-            Failed to load inventory. Please try again.
-          </div>
-        )}
-
-        {!isLoading && !error && (
+        {isLoading ? (
+          <EmptyState
+            title="Loading..."
+            description="Fetching inventory data"
+            variant="empty"
+          />
+        ) : error ? (
+          <EmptyState
+            title="Failed to load data"
+            description="Please check your connection and try again"
+            variant="error"
+            actionLabel="Retry"
+            onAction={() => window.location.reload()}
+          />
+        ) : paginatedInventory.length === 0 ? (
+          <EmptyState
+            title="No inventory found"
+            description="Add products to your inventory to get started"
+            actionLabel="Add Product"
+            onAction={() => {}}
+          />
+        ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -135,93 +145,85 @@ export function InventoryPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200">
-                  {paginatedInventory.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">
-                        No inventory found
+                  {paginatedInventory.map((item: Inventory) => (
+                    <tr
+                      key={item.id}
+                      onClick={() => setSelectedInventoryId(item.id)}
+                      className={`cursor-pointer transition-colors ${
+                        selectedInventoryId === item.id ? 'bg-primary-50' : 'hover:bg-neutral-50'
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <div>
+                          <div className="font-medium text-neutral-900">{item.productName}</div>
+                          <div className="text-sm text-neutral-500">{item.productBarcode}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div>
+                          <div className="font-medium text-neutral-900">{item.locationCode}</div>
+                          <div className="text-sm text-neutral-500">{item.locationName}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-neutral-900">{item.lotNumber}</td>
+                      <td className="px-4 py-3">
+                        <div className="text-neutral-900">{formatDate(item.expiryDate)}</div>
+                        {(() => {
+                          const status = getExpiryStatus(item.expiryDate)
+                          return status ? (
+                            <div className={`text-sm ${status.color}`}>
+                              {status.label}
+                            </div>
+                          ) : null
+                        })()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="font-medium text-neutral-900">{item.quantity}</div>
+                        {item.reservedQuantity > 0 && (
+                          <div className="text-sm text-neutral-500">
+                            Reserved: {item.reservedQuantity}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-1 rounded text-sm font-medium ${getStatusColor(getInventoryStatus(item))}`}>
+                          {getInventoryStatus(item)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setSelectedInventoryId(item.id)
+                              setIsAdjustModalOpen(true)
+                            }}
+                            className="rounded px-2 py-1 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50"
+                            title="Adjust Stock"
+                          >
+                            Adjust
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => event.stopPropagation()}
+                            className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4 text-neutral-600" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => event.stopPropagation()}
+                            className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                            title="Transaction History"
+                          >
+                            <History className="w-4 h-4 text-neutral-600" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ) : (
-                    paginatedInventory.map((item: Inventory) => (
-                      <tr
-                        key={item.id}
-                        onClick={() => setSelectedInventoryId(item.id)}
-                        className={`cursor-pointer transition-colors ${
-                          selectedInventoryId === item.id ? 'bg-primary-50' : 'hover:bg-neutral-50'
-                        }`}
-                      >
-                        <td className="px-4 py-3">
-                          <div>
-                            <div className="font-medium text-neutral-900">{item.productName}</div>
-                            <div className="text-sm text-neutral-500">{item.productBarcode}</div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div>
-                            <div className="font-medium text-neutral-900">{item.locationCode}</div>
-                            <div className="text-sm text-neutral-500">{item.locationName}</div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-neutral-900">{item.lotNumber}</td>
-                        <td className="px-4 py-3">
-                          <div className="text-neutral-900">{formatDate(item.expiryDate)}</div>
-                          {(() => {
-                            const status = getExpiryStatus(item.expiryDate)
-                            return status ? (
-                              <div className={`text-sm ${status.color}`}>
-                                {status.label}
-                              </div>
-                            ) : null
-                          })()}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="font-medium text-neutral-900">{item.quantity}</div>
-                          {item.reservedQuantity > 0 && (
-                            <div className="text-sm text-neutral-500">
-                              Reserved: {item.reservedQuantity}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-1 rounded text-sm font-medium ${getStatusColor(getInventoryStatus(item))}`}>
-                            {getInventoryStatus(item)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                setSelectedInventoryId(item.id)
-                                setIsAdjustModalOpen(true)
-                              }}
-                              className="rounded px-2 py-1 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50"
-                              title="Adjust Stock"
-                            >
-                              Adjust
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(event) => event.stopPropagation()}
-                              className="p-1 hover:bg-neutral-100 rounded transition-colors"
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4 text-neutral-600" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(event) => event.stopPropagation()}
-                              className="p-1 hover:bg-neutral-100 rounded transition-colors"
-                              title="Transaction History"
-                            >
-                              <History className="w-4 h-4 text-neutral-600" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>

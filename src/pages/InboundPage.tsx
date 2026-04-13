@@ -15,6 +15,7 @@ import { useLocations } from '@/hooks/useLocation'
 import { ProductSelectDropdown } from '@/components/products/ProductSelectDropdown'
 import type { Inbound, InboundStatus } from '@/types/inbound'
 import type { Location } from '@/types/location'
+import { EmptyState } from '@/components/common/EmptyState'
 
 /**
  * Inbound management page with table, filters, and modals.
@@ -31,11 +32,19 @@ export function InboundPage() {
   const { data: inbounds, isLoading, error } = useInbounds(statusFilter || undefined)
 
   if (isLoading) {
-    return <div className="text-neutral-600">Loading...</div>
+    return <EmptyState title="Loading..." description="Fetching inbound data" variant="empty" />
   }
 
   if (error) {
-    return <div className="text-error">Error loading inbounds: {error.message}</div>
+    return (
+      <EmptyState
+        title="Failed to load data"
+        description={error.message}
+        variant="error"
+        actionLabel="Retry"
+        onAction={() => window.location.reload()}
+      />
+    )
   }
 
   return (
@@ -65,20 +74,20 @@ export function InboundPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-neutral-200">
-          <thead className="bg-neutral-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Supplier</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Qty</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-neutral-200">
-            {inbounds && inbounds.length > 0 ? (
-              inbounds.map((inbound) => (
+        {inbounds && inbounds.length > 0 ? (
+          <table className="min-w-full divide-y divide-neutral-200">
+            <thead className="bg-neutral-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Supplier</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Qty</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-neutral-200">
+              {inbounds.map((inbound) => (
                 <tr key={inbound.id} className="hover:bg-neutral-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{inbound.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.inboundDate}</td>
@@ -132,16 +141,17 @@ export function InboundPage() {
                     </div>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-neutral-500">
-                  No inbounds found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <EmptyState
+            title="No inbounds found"
+            description="Create your first inbound to get started"
+            actionLabel="New Inbound"
+            onAction={() => setShowCreateModal(true)}
+          />
+        )}
       </div>
 
       {showCreateModal && (

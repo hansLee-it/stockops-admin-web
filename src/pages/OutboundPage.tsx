@@ -12,6 +12,7 @@ import { Plus, Eye, CheckCircle, X, Package } from 'lucide-react'
 import api from '@/lib/api'
 import type { OutboundDTO, OutboundItemDTO, OutboundStatus, CreateOutboundRequest, AddOutboundItemRequest } from '@/types/outbound'
 import type { ProductDTO } from '@/types/product'
+import { EmptyState } from '@/components/common/EmptyState'
 
 /**
  * Outbound management page with table, filtering, and CRUD operations.
@@ -82,7 +83,18 @@ export function OutboundPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-neutral-600">Loading...</div>
+        <EmptyState
+          title="Loading..."
+          description="Fetching outbound data"
+          variant="empty"
+        />
+      ) : outbounds.length === 0 ? (
+        <EmptyState
+          title="No outbounds found"
+          description="Create your first outbound to get started"
+          actionLabel="New Outbound"
+          onAction={() => setIsCreateModalOpen(true)}
+        />
       ) : (
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-neutral-200">
@@ -97,56 +109,48 @@ export function OutboundPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-neutral-200">
-              {outbounds.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-neutral-500">
-                    No outbounds found
+              {outbounds.map((outbound) => (
+                <tr key={outbound.id} className="hover:bg-neutral-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.outboundDate}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.customer}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs font-medium rounded ${
+                      outbound.status === 'CONFIRMED' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {outbound.status}
+                    </span>
                   </td>
-                </tr>
-              ) : (
-                outbounds.map((outbound) => (
-                  <tr key={outbound.id} className="hover:bg-neutral-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.outboundDate}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.customer}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded ${
-                        outbound.status === 'CONFIRMED' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {outbound.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.totalQuantity}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex gap-2">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.totalQuantity}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleViewDetails(outbound)}
+                        className="text-primary-600 hover:text-primary-800"
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      {outbound.status === 'DRAFT' && (
                         <button
-                          onClick={() => handleViewDetails(outbound)}
-                          className="text-primary-600 hover:text-primary-800"
-                          title="View Details"
+                          onClick={() => handleConfirm(outbound.id)}
+                          className="text-green-600 hover:text-green-800"
+                          title="Confirm"
+                          disabled={confirmMutation.isPending}
                         >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        {outbound.status === 'DRAFT' && (
-                          <button
-                            onClick={() => handleConfirm(outbound.id)}
-                            className="text-green-600 hover:text-green-800"
-                            title="Confirm"
-                            disabled={confirmMutation.isPending}
-                          >
-                            <CheckCircle className="w-4 h-4" />
+                          <CheckCircle className="w-4 h-4" />
                           </button>
                         )}
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
       {isCreateModalOpen && (
         <CreateOutboundModal

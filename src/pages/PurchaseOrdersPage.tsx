@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react'
 import api from '@/lib/api'
 import { Plus, Eye, X } from 'lucide-react'
+import { EmptyState } from '@/components/common/EmptyState'
 
 interface Center {
   id: number
@@ -237,7 +238,18 @@ export function PurchaseOrdersPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-text-secondary">로딩 중...</div>
+        <EmptyState
+          title="Loading..."
+          description="Fetching purchase orders"
+          variant="empty"
+        />
+      ) : purchaseOrders.length === 0 ? (
+        <EmptyState
+          title="No purchase orders found"
+          description="Create your first purchase order to get started"
+          actionLabel="New Purchase Order"
+          onAction={() => setShowModal(true)}
+        />
       ) : (
         <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
           <table className="w-full">
@@ -278,13 +290,6 @@ export function PurchaseOrdersPage() {
                   </td>
                 </tr>
               ))}
-              {purchaseOrders.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-text-secondary">
-                    등록된 발주가 없습니다.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
