@@ -28,6 +28,7 @@ const navItems: NavItem[] = [
   { to: '/dashboard', label: '대시보드', icon: LayoutDashboard },
   { to: '/centers', label: '센터 관리', icon: Building2 },
   { to: '/warehouses', label: '창고 관리', icon: Warehouse },
+  { to: '/products', label: '상품 관리', icon: Package },
   { to: '/inventory', label: '재고 관리', icon: Package },
   { to: '/inbound', label: '입고 관리', icon: ArrowDownToLine },
   { to: '/outbound', label: '출고 관리', icon: ArrowUpFromLine },
@@ -146,6 +147,7 @@ export function MainLayout() {
       )}
 
       <aside
+        id="main-sidebar"
         ref={sidebarRef}
         className={`fixed inset-y-0 left-0 w-64 bg-bg-dark text-white flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'

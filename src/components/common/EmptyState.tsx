@@ -6,6 +6,7 @@
  * @since 1.0
  */
 
+import { useId } from 'react'
 import { Inbox, AlertCircle, RefreshCw } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -79,25 +80,40 @@ export function EmptyState({
   icon: CustomIcon,
   className = '',
 }: EmptyStateProps) {
+  const headingId = useId()
+  const descriptionId = useId()
   const DefaultIcon = variant === 'error' ? AlertCircle : Inbox
   const Icon = CustomIcon || DefaultIcon
 
   const iconColorClass = variant === 'error' ? 'text-error' : 'text-neutral-400'
   const buttonVariant = variant === 'error' ? 'bg-error hover:bg-error/90' : 'bg-primary-600 hover:bg-primary-700'
+  const regionRole = variant === 'error' ? 'alert' : 'status'
 
   return (
-    <div className={`flex flex-col items-center justify-center py-12 px-4 ${className}`}>
-      <Icon className={`w-12 h-12 mb-4 ${iconColorClass}`} />
-      <h3 className="text-lg font-medium text-neutral-900 mb-2">{title}</h3>
+    <div
+      className={`flex flex-col items-center justify-center py-12 px-4 ${className}`}
+      role={regionRole}
+      aria-live={variant === 'error' ? 'assertive' : 'polite'}
+      aria-atomic="true"
+      aria-labelledby={headingId}
+      aria-describedby={description ? descriptionId : undefined}
+    >
+      <Icon aria-hidden="true" className={`w-12 h-12 mb-4 ${iconColorClass}`} />
+      <h3 id={headingId} className="text-lg font-medium text-neutral-900 mb-2">
+        {title}
+      </h3>
       {description && (
-        <p className="text-sm text-neutral-500 text-center max-w-sm mb-4">{description}</p>
+        <p id={descriptionId} className="text-sm text-neutral-500 text-center max-w-sm mb-4">
+          {description}
+        </p>
       )}
       {actionLabel && onAction && (
         <button
+          type="button"
           onClick={onAction}
           className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors ${buttonVariant}`}
         >
-          {variant === 'error' && <RefreshCw className="w-4 h-4" />}
+          {variant === 'error' && <RefreshCw aria-hidden="true" className="w-4 h-4" />}
           {actionLabel}
         </button>
       )}

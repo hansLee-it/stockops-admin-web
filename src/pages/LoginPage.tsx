@@ -73,7 +73,11 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-neutral-50">
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center text-neutral-900">StockOps</h1>
-        {error && <div className="bg-error/10 text-error p-3 rounded mb-4">{error}</div>}
+        {error && (
+          <div role="alert" className="bg-error/10 text-error p-3 rounded mb-4">
+            {error}
+          </div>
+        )}
         <div className="mb-4">
           <label htmlFor="email" className="block text-sm font-medium mb-1 text-neutral-700">
             Email
