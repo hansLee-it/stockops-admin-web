@@ -17,6 +17,8 @@ export interface ProductDTO {
   category: string
   unit: string
   expiryManaged: boolean
+  defaultPrice: number
+  safetyStockQuantity: number
   createdAt: string
   updatedAt: string
 }
@@ -31,4 +33,19 @@ export interface CreateProductRequest {
   category?: string
   unit: string
   expiryManaged: boolean
+  defaultPrice?: number
+  safetyStockQuantity?: number
+}
+
+/**
+ * Request payload for updating an existing product.
+ */
+export interface UpdateProductRequest {
+  name?: string
+  description?: string
+  category?: string
+  unit?: string
+  expiryManaged?: boolean
+  defaultPrice?: number
+  safetyStockQuantity?: number
 }

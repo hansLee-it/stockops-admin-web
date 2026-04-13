@@ -18,6 +18,7 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { CentersPage } from '@/pages/CentersPage'
 import { WarehousesPage } from '@/pages/WarehousesPage'
 import { PurchaseOrdersPage } from '@/pages/PurchaseOrdersPage'
+import { ProductsPage } from '@/pages/ProductsPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -52,6 +53,7 @@ function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="centers" element={<CentersPage />} />
           <Route path="warehouses" element={<WarehousesPage />} />
+          <Route path="products" element={<ProductsPage />} />
           <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="inbound" element={<InboundPage />} />
