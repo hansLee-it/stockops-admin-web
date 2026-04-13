@@ -10,6 +10,7 @@ import { useState, useMemo } from 'react'
 import { useInventory } from '@/hooks/useInventory'
 import type { Inventory } from '@/types/inventory'
 import { Search, Filter, Eye, History, Package, ChevronLeft, ChevronRight } from 'lucide-react'
+import { EmptyState } from '@/components/common/EmptyState'
 
 /**
  * Inventory page with table, search, filters, and pagination.

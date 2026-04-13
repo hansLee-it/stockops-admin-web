@@ -10,6 +10,7 @@ import { useState, useMemo } from 'react'
 import { useLocations } from '@/hooks/useLocation'
 import type { Location } from '@/types/location'
 import { Search, Filter, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
+import { EmptyState } from '@/components/common/EmptyState'
 
 /**
  * Locations page with table, search, filters, and pagination.
@@ -92,19 +93,28 @@ export function LocationsPage() {
           </div>
         </div>
 
-        {isLoading && (
-          <div className="p-8 text-center text-neutral-500">
-            Loading locations...
-          </div>
-        )}
-
-        {error && (
-          <div className="p-4 bg-error/10 text-error rounded m-4">
-            Failed to load locations. Please try again.
-          </div>
-        )}
-
-        {!isLoading && !error && (
+        {isLoading ? (
+          <EmptyState
+            title="Loading..."
+            description="Fetching location data"
+            variant="empty"
+          />
+        ) : error ? (
+          <EmptyState
+            title="Failed to load data"
+            description="Please check your connection and try again"
+            variant="error"
+            actionLabel="Retry"
+            onAction={() => window.location.reload()}
+          />
+        ) : paginatedLocations.length === 0 ? (
+          <EmptyState
+            title="No locations found"
+            description="Add your first location to get started"
+            actionLabel="Add Location"
+            onAction={() => {}}
+          />
+        ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -119,36 +129,28 @@ export function LocationsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200">
-                  {paginatedLocations.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">
-                        No locations found
+                  {paginatedLocations.map((item: Location) => (
+                    <tr key={item.id} className="hover:bg-neutral-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className="font-medium text-neutral-900">{item.code}</span>
+                      </td>
+                      <td className="px-4 py-3 text-neutral-900">{item.name}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded text-sm font-medium ${getTypeColor(item.type)}`}>
+                          {item.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-neutral-900">
+                        {item.zone || <span className="text-neutral-400">-</span>}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-900">
+                        {item.shelf || <span className="text-neutral-400">-</span>}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-900">
+                        {item.level || <span className="text-neutral-400">-</span>}
                       </td>
                     </tr>
-                  ) : (
-                    paginatedLocations.map((item: Location) => (
-                      <tr key={item.id} className="hover:bg-neutral-50 transition-colors">
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-neutral-900">{item.code}</span>
-                        </td>
-                        <td className="px-4 py-3 text-neutral-900">{item.name}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded text-sm font-medium ${getTypeColor(item.type)}`}>
-                            {item.type}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-neutral-900">
-                          {item.zone || <span className="text-neutral-400">-</span>}
-                        </td>
-                        <td className="px-4 py-3 text-neutral-900">
-                          {item.shelf || <span className="text-neutral-400">-</span>}
-                        </td>
-                        <td className="px-4 py-3 text-neutral-900">
-                          {item.level || <span className="text-neutral-400">-</span>}
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>

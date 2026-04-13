@@ -104,7 +104,7 @@ export function CentersPage() {
       {loading ? (
         <div className="text-center py-12 text-text-secondary">로딩 중...</div>
       ) : (
-        <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
           <table className="w-full">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>

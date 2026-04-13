@@ -1,17 +1,20 @@
 /**
  * Main layout component with sidebar navigation.
  * Enhanced with dark sidebar, warehouse selector, and notification bell.
+ * Implements always-hamburger responsive layout - sidebar is hidden by default
+ * and toggled via hamburger button on ALL screen sizes.
  *
  * @author StockOps Team
  * @since 1.0
  */
 
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { 
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, 
   MapPin, LogOut, Clock, Bell, Settings,
-  Building2, Warehouse
+  Building2, Warehouse, Menu, X
 } from 'lucide-react'
 
 interface NavItem {
@@ -33,15 +36,98 @@ const navItems: NavItem[] = [
   { to: '/settings', label: '설정', icon: Settings },
 ]
 
+/**
+ * Main layout with always-hamburger responsive sidebar.
+ * Sidebar is hidden by default and toggled via hamburger button.
+ * Includes overlay backdrop, ESC key support, and focus trap.
+ *
+ * @returns Main layout JSX element
+ */
 export function MainLayout() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const sidebarRef = useRef<HTMLElement>(null)
+  const hamburgerRef = useRef<HTMLButtonElement>(null)
+  const previousActiveElement = useRef<HTMLElement | null>(null)
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
+
+  const openSidebar = useCallback(() => {
+    previousActiveElement.current = document.activeElement as HTMLElement
+    setSidebarOpen(true)
+  }, [])
+
+  const closeSidebar = useCallback(() => {
+    setSidebarOpen(false)
+    // Return focus to hamburger button
+    hamburgerRef.current?.focus()
+  }, [])
+
+  const toggleSidebar = useCallback(() => {
+    if (sidebarOpen) {
+      closeSidebar()
+    } else {
+      openSidebar()
+    }
+  }, [sidebarOpen, openSidebar, closeSidebar])
+
+  // Handle ESC key to close sidebar
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && sidebarOpen) {
+        closeSidebar()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [sidebarOpen, closeSidebar])
+
+  // Focus trap when sidebar is open
+  useEffect(() => {
+    if (!sidebarOpen || !sidebarRef.current) return
+
+    const sidebar = sidebarRef.current
+    const focusableElements = sidebar.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements[focusableElements.length - 1]
+
+    // Focus first element when sidebar opens
+    firstElement?.focus()
+
+    const handleTabKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return
+
+      if (event.shiftKey) {
+        // Shift+Tab: if on first element, go to last
+        if (document.activeElement === firstElement) {
+          event.preventDefault()
+          lastElement?.focus()
+        }
+      } else {
+        // Tab: if on last element, go to first
+        if (document.activeElement === lastElement) {
+          event.preventDefault()
+          firstElement?.focus()
+        }
+      }
+    }
+
+    sidebar.addEventListener('keydown', handleTabKey)
+    return () => sidebar.removeEventListener('keydown', handleTabKey)
+  }, [sidebarOpen])
+
+  // Close sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
 
   const getPageTitle = () => {
     const item = navItems.find(item => item.to === location.pathname)
@@ -50,10 +136,33 @@ export function MainLayout() {
 
   return (
     <div className="min-h-screen flex bg-bg-secondary">
-      <aside className="w-64 bg-bg-dark text-white flex flex-col">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:bg-transparent"
+          onClick={closeSidebar}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        ref={sidebarRef}
+        className={`fixed inset-y-0 left-0 w-64 bg-bg-dark text-white flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        role="navigation"
+        aria-label="Main navigation"
+        aria-hidden={!sidebarOpen}
+      >
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">📦 StockOps</h1>
+            <button
+              onClick={closeSidebar}
+              className="p-2 hover:bg-white/10 rounded-lg lg:hidden"
+              aria-label="Close sidebar"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
           
           <div className="mt-4 space-y-2">
@@ -105,8 +214,18 @@ export function MainLayout() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <header className="bg-white border-b border-neutral-200 px-4 lg:px-6 py-4 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-4">
+            <button
+              ref={hamburgerRef}
+              onClick={toggleSidebar}
+              className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+              aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+              aria-expanded={sidebarOpen}
+              aria-controls="main-sidebar"
+            >
+              <Menu className="w-6 h-6 text-text-secondary" />
+            </button>
             <h1 className="text-xl font-semibold text-text-primary">
               {getPageTitle()}
             </h1>
@@ -127,7 +246,7 @@ export function MainLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
           <Outlet />
         </main>
       </div>

@@ -8,7 +8,8 @@
 
 import { useState, useEffect } from 'react'
 import api from '@/lib/api'
-import { Warehouse, Plus, Edit, Trash2, Building2, RefreshCw, AlertCircle } from 'lucide-react'
+import { Warehouse, Plus, Edit, Trash2, Building2 } from 'lucide-react'
+import { EmptyState } from '@/components/common/EmptyState'
 
 interface Center {
   id: number
@@ -127,29 +128,33 @@ export function WarehousesPage() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-12 text-text-secondary">
-          <RefreshCw className="w-8 h-8 animate-spin mb-2" />
-          <span>로딩 중...</span>
-        </div>
+        <EmptyState
+          title="Loading..."
+          description="Fetching warehouse data"
+          variant="empty"
+        />
       ) : error ? (
-        <div className="bg-error/10 border border-error/20 rounded-xl p-6">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 text-error" />
-            <div className="flex-1">
-              <p className="font-medium text-error">{error}</p>
-            </div>
-            <button
-              onClick={() => fetchWarehouses()}
-              className="flex items-center gap-2 px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              재시도
-            </button>
-          </div>
-        </div>
+        <EmptyState
+          title="Failed to load data"
+          description={error}
+          variant="error"
+          actionLabel="Retry"
+          onAction={() => fetchWarehouses()}
+        />
+      ) : warehouses.length === 0 ? (
+        <EmptyState
+          title="No warehouses found"
+          description="Add your first warehouse to get started"
+          actionLabel="Add Warehouse"
+          onAction={() => {
+            setEditingWarehouse(null)
+            setFormData({ code: '', name: '', address: '', phone: '', centerId: '' })
+            setShowModal(true)
+          }}
+        />
       ) : (
-        <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-          <table className="w-full">
+<div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
+           <table className="w-full">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">코드</th>
@@ -161,49 +166,42 @@ export function WarehousesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
-              {warehouses.map((warehouse) => (
-                <tr key={warehouse.id} className="hover:bg-neutral-50">
-                  <td className="px-6 py-4 font-mono text-sm">{warehouse.code}</td>
-                  <td className="px-6 py-4 font-medium">{warehouse.name}</td>
-                  <td className="px-6 py-4">
-                    <span className="flex items-center gap-1 text-sm">
-                      <Building2 className="w-4 h-4" />
-                      {warehouse.center?.name || '-'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-text-secondary">{warehouse.address || '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      warehouse.status === 'ACTIVE' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-neutral-100 text-neutral-600'
-                    }`}>
-                      {warehouse.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => handleEdit(warehouse)}
-                      className="p-2 hover:bg-neutral-100 rounded-lg text-text-secondary"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(warehouse.id)}
-                      className="p-2 hover:bg-red-50 rounded-lg text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {warehouses.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-text-secondary">
-                    등록된 창고가 없습니다.
-                  </td>
-                </tr>
-              )}
+{warehouses.map((warehouse) => (
+                  <tr key={warehouse.id} className="hover:bg-neutral-50">
+                    <td className="px-6 py-4 font-mono text-sm">{warehouse.code}</td>
+                    <td className="px-6 py-4 font-medium">{warehouse.name}</td>
+                    <td className="px-6 py-4">
+                      <span className="flex items-center gap-1 text-sm">
+                        <Building2 className="w-4 h-4" />
+                        {warehouse.center?.name || '-'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-text-secondary">{warehouse.address || '-'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        warehouse.status === 'ACTIVE' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-neutral-100 text-neutral-600'
+                      }`}>
+                        {warehouse.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => handleEdit(warehouse)}
+                        className="p-2 hover:bg-neutral-100 rounded-lg text-text-secondary"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(warehouse.id)}
+                        className="p-2 hover:bg-red-50 rounded-lg text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

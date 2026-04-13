@@ -84,7 +84,7 @@ export function OutboundPage() {
       {isLoading ? (
         <div className="text-neutral-600">Loading...</div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-neutral-200">
             <thead className="bg-neutral-50">
               <tr>
