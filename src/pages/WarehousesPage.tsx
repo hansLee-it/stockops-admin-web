@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react'
 import api from '@/lib/api'
-import { Warehouse, Plus, Edit, Trash2, Building2 } from 'lucide-react'
+import { Warehouse, Plus, Edit, Trash2, Building2, RefreshCw, AlertCircle } from 'lucide-react'
 
 interface Center {
   id: number
@@ -31,6 +31,7 @@ export function WarehousesPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
   const [centers, setCenters] = useState<Center[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
   const [formData, setFormData] = useState({
@@ -57,10 +58,13 @@ export function WarehousesPage() {
 
   const fetchWarehouses = async () => {
     try {
+      setLoading(true)
+      setError(null)
       const response = await api.get('/v1/warehouses')
       setWarehouses(response.data)
-    } catch (error) {
-      console.error('Failed to fetch warehouses:', error)
+    } catch (err) {
+      console.error('Failed to fetch warehouses:', err)
+      setError('창고 데이터를 불러오지 못했습니다.')
     } finally {
       setLoading(false)
     }
@@ -123,7 +127,26 @@ export function WarehousesPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-text-secondary">로딩 중...</div>
+        <div className="flex flex-col items-center justify-center py-12 text-text-secondary">
+          <RefreshCw className="w-8 h-8 animate-spin mb-2" />
+          <span>로딩 중...</span>
+        </div>
+      ) : error ? (
+        <div className="bg-error/10 border border-error/20 rounded-xl p-6">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-6 h-6 text-error" />
+            <div className="flex-1">
+              <p className="font-medium text-error">{error}</p>
+            </div>
+            <button
+              onClick={() => fetchWarehouses()}
+              className="flex items-center gap-2 px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              재시도
+            </button>
+          </div>
+        </div>
       ) : (
         <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
           <table className="w-full">
