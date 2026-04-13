@@ -1,12 +1,14 @@
 /**
  * Dashboard page component.
  * Main landing page after login showing system overview.
- * Redesigned to match web_proto with stats cards, alerts, and AI widget.
+ * Redesigned to match web_proto with stats cards, alerts, AI widget,
+ * and refresh metadata for live dashboard monitoring.
  *
  * @author StockOps Team
  * @since 1.0
  */
 
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useDashboardSummary, useDashboardTransactions } from '@/hooks/useDashboard'
@@ -18,14 +20,60 @@ import { ArrowDownToLine, ArrowUpFromLine, Package, RefreshCw } from 'lucide-rea
 
 /**
  * Dashboard page displaying welcome message and system overview.
- * Shows key metrics, recent transactions, and quick actions.
+ * Shows key metrics, recent transactions, quick actions, and dashboard
+ * refresh status with manual refetch support.
  *
  * @returns Dashboard page JSX element
  */
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user)
-  const { data: summary, isLoading, refetch } = useDashboardSummary()
-  const { data: transactions } = useDashboardTransactions(5)
+  const [now, setNow] = useState(() => Date.now())
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false)
+  const {
+    data: summary,
+    refetch: refetchSummary,
+    dataUpdatedAt: summaryUpdatedAt,
+  } = useDashboardSummary()
+  const {
+    data: transactions,
+    refetch: refetchTransactions,
+    dataUpdatedAt: transactionsUpdatedAt,
+  } = useDashboardTransactions(5)
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  const lastUpdatedAt = useMemo(() => {
+    return Math.max(summaryUpdatedAt, transactionsUpdatedAt)
+  }, [summaryUpdatedAt, transactionsUpdatedAt])
+
+  const lastUpdatedText = useMemo(() => {
+    if (!lastUpdatedAt) {
+      return 'Last updated: waiting for data'
+    }
+
+    const secondsAgo = Math.max(0, Math.floor((now - lastUpdatedAt) / 1000))
+    return `Last updated: ${secondsAgo} seconds ago`
+  }, [lastUpdatedAt, now])
+
+  async function handleManualRefresh(): Promise<void> {
+    setIsManualRefreshing(true)
+
+    try {
+      await Promise.all([refetchSummary(), refetchTransactions()])
+    }
+    finally {
+      setIsManualRefreshing(false)
+      setNow(Date.now())
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -37,13 +85,16 @@ export function DashboardPage() {
             안녕하세요, <span className="font-medium">{user?.name || '관리자'}</span>님! 
             현재 시스템 현황을 확인하세요.
           </p>
+          <p className="text-sm text-text-secondary mt-2">{lastUpdatedText}</p>
         </div>
         <button 
-          onClick={() => refetch()}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
+          type="button"
+          onClick={handleManualRefresh}
+          disabled={isManualRefreshing}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors disabled:cursor-not-allowed disabled:opacity-70"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          새로고침
+          <RefreshCw className={`w-4 h-4 ${isManualRefreshing ? 'animate-spin' : ''}`} />
+          {isManualRefreshing ? '새로고침 중...' : '새로고침'}
         </button>
       </div>
 

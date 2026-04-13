@@ -15,6 +15,8 @@ import type { InventoryTransaction } from '@/types/inventory'
 
 /**
  * Fetches dashboard summary data.
+ * Keeps dashboard metrics fresh with a 30-second polling interval while
+ * treating data as fresh for 15 seconds to avoid unnecessary refetches.
  *
  * @returns React Query result with dashboard summary
  * @example
@@ -27,11 +29,14 @@ export function useDashboardSummary(): UseQueryResult<DashboardSummary, AxiosErr
       const response = await api.get<DashboardSummary>('/v1/dashboard/summary')
       return response.data
     },
+    staleTime: 15000,
+    refetchInterval: 30000,
   })
 }
 
 /**
  * Fetches recent transactions for dashboard display.
+ * Keeps activity data synchronized with the dashboard auto-refresh cadence.
  *
  * @param limit - Maximum number of transactions to fetch (default: 5)
  * @returns React Query result with recent transaction array
@@ -45,5 +50,7 @@ export function useDashboardTransactions(limit: number = 5): UseQueryResult<Inve
       const response = await api.get<InventoryTransaction[]>('/v1/inventory/transactions/recent')
       return response.data.slice(0, limit)
     },
+    staleTime: 15000,
+    refetchInterval: 30000,
   })
 }
