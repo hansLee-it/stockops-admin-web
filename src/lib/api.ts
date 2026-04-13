@@ -7,6 +7,7 @@
  */
 
 import axios from 'axios'
+import { getErrorMessage, showErrorToast } from '@/lib/httpError'
 import { useAuthStore } from '@/stores/authStore'
 
 /**
@@ -39,16 +40,25 @@ api.interceptors.request.use((config) => {
 })
 
 /**
- * Response interceptor that handles authentication errors.
- * On 401 Unauthorized, clears auth state and redirects to login page.
+ * Response interceptor that separates network failures from authentication errors.
+ * Network and timeout failures surface a toast without clearing auth state,
+ * while real 401 responses still force a logout and redirect to the login page.
  */
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  (error: unknown) => {
+    const message = getErrorMessage(error)
+
+    if (message) {
+      showErrorToast(message)
+      return Promise.reject(error)
+    }
+
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
       useAuthStore.getState().logout()
       window.location.href = '/login'
     }
+
     return Promise.reject(error)
   }
 )
