@@ -46,26 +46,24 @@ export function LoginPage() {
 
       navigate('/dashboard')
     } catch (err: unknown) {
-      if (getErrorMessage(err)) {
+      // Check for network errors (timeout, connection refused, etc.)
+      const networkMessage = getErrorMessage(err)
+      if (networkMessage) {
+        setError(networkMessage)
         return
       }
 
-      let message = 'Login failed'
-      if (err && typeof err === 'object') {
-        if ('response' in err && err.response && typeof err.response === 'object') {
-          const response = err.response as { data?: { message?: string }; status?: number }
-          if ('data' in response && response.data && typeof response.data === 'object') {
-            if ('message' in response.data && response.data.message) {
-              message = response.data.message
-            } else {
-              message = `Server error: ${response.status}`
-            }
-          }
-        } else if ('message' in err && typeof (err as Error).message === 'string') {
-          message = (err as Error).message
+      // Check for authentication errors (401)
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { status?: number } }
+        if (axiosError.response?.status === 401) {
+          setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+          return
         }
       }
-      setError(message)
+
+      // All other errors
+      setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
     } finally {
       setLoading(false)
     }
