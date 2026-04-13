@@ -7,10 +7,10 @@
  */
 
 import { useState, useMemo } from 'react'
+import { InventoryAdjustModal } from '@/components/inventory/InventoryAdjustModal'
 import { useInventory } from '@/hooks/useInventory'
 import type { Inventory } from '@/types/inventory'
 import { Search, Filter, Eye, History, Package, ChevronLeft, ChevronRight } from 'lucide-react'
-import { EmptyState } from '@/components/common/EmptyState'
 
 /**
  * Inventory page with table, search, filters, and pagination.
@@ -21,9 +21,16 @@ export function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(0)
+  const [selectedInventoryId, setSelectedInventoryId] = useState<number | null>(null)
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false)
   const pageSize = 10
 
   const { data: inventory = [], isLoading, error } = useInventory()
+
+  const selectedInventory = useMemo(
+    () => inventory.find((item: Inventory) => item.id === selectedInventoryId) ?? null,
+    [inventory, selectedInventoryId],
+  )
 
   const filteredInventory = useMemo(() => {
     return inventory.filter((item: Inventory) => {
@@ -50,9 +57,14 @@ export function InventoryPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-neutral-900">Inventory</h1>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors">
+          <button
+            type="button"
+            onClick={() => selectedInventory && setIsAdjustModalOpen(true)}
+            disabled={!selectedInventory}
+            className="flex items-center gap-2 rounded bg-primary-600 px-4 py-2 text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+          >
             <Package className="w-4 h-4" />
-            Stock Adjustment
+            {selectedInventory ? 'Adjust Selected Stock' : 'Select Stock to Adjust'}
           </button>
         </div>
       </div>
@@ -131,7 +143,13 @@ export function InventoryPage() {
                     </tr>
                   ) : (
                     paginatedInventory.map((item: Inventory) => (
-                      <tr key={item.id} className="hover:bg-neutral-50 transition-colors">
+                      <tr
+                        key={item.id}
+                        onClick={() => setSelectedInventoryId(item.id)}
+                        className={`cursor-pointer transition-colors ${
+                          selectedInventoryId === item.id ? 'bg-primary-50' : 'hover:bg-neutral-50'
+                        }`}
+                      >
                         <td className="px-4 py-3">
                           <div>
                             <div className="font-medium text-neutral-900">{item.productName}</div>
@@ -172,12 +190,28 @@ export function InventoryPage() {
                         <td className="px-4 py-3">
                           <div className="flex justify-center gap-2">
                             <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                setSelectedInventoryId(item.id)
+                                setIsAdjustModalOpen(true)
+                              }}
+                              className="rounded px-2 py-1 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50"
+                              title="Adjust Stock"
+                            >
+                              Adjust
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => event.stopPropagation()}
                               className="p-1 hover:bg-neutral-100 rounded transition-colors"
                               title="View Details"
                             >
                               <Eye className="w-4 h-4 text-neutral-600" />
                             </button>
                             <button
+                              type="button"
+                              onClick={(event) => event.stopPropagation()}
                               className="p-1 hover:bg-neutral-100 rounded transition-colors"
                               title="Transaction History"
                             >
@@ -237,6 +271,12 @@ export function InventoryPage() {
           </>
         )}
       </div>
+
+      <InventoryAdjustModal
+        isOpen={isAdjustModalOpen}
+        inventory={selectedInventory}
+        onClose={() => setIsAdjustModalOpen(false)}
+      />
     </div>
   )
 }
