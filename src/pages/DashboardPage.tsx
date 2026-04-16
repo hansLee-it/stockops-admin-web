@@ -10,13 +10,15 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useDashboardSummary, useDashboardTransactions } from '@/hooks/useDashboard'
+import { useEnvironmentDashboard } from '@/hooks/useEnvironment'
 import { StatCard } from '@/components/ui/StatCard'
 import { AlertItem } from '@/components/ui/AlertItem'
 import { ActivityItem } from '@/components/ui/ActivityItem'
 import { AIBanner } from '@/components/ui/AIBanner'
-import { ArrowDownToLine, ArrowUpFromLine, Package, RefreshCw } from 'lucide-react'
+import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, Package, RefreshCw } from 'lucide-react'
 
 /**
  * Dashboard page displaying welcome message and system overview.
@@ -27,8 +29,10 @@ import { ArrowDownToLine, ArrowUpFromLine, Package, RefreshCw } from 'lucide-rea
  */
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user)
+  const queryClient = useQueryClient()
   const [now, setNow] = useState(() => Date.now())
   const [isManualRefreshing, setIsManualRefreshing] = useState(false)
+  const [isEnvironmentRefreshing, setIsEnvironmentRefreshing] = useState(false)
   const {
     data: summary,
     refetch: refetchSummary,
@@ -39,6 +43,7 @@ export function DashboardPage() {
     refetch: refetchTransactions,
     dataUpdatedAt: transactionsUpdatedAt,
   } = useDashboardTransactions(5)
+  const environmentDashboardQuery = useEnvironmentDashboard()
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -51,8 +56,8 @@ export function DashboardPage() {
   }, [])
 
   const lastUpdatedAt = useMemo(() => {
-    return Math.max(summaryUpdatedAt, transactionsUpdatedAt)
-  }, [summaryUpdatedAt, transactionsUpdatedAt])
+    return Math.max(summaryUpdatedAt, transactionsUpdatedAt, environmentDashboardQuery.dataUpdatedAt)
+  }, [summaryUpdatedAt, transactionsUpdatedAt, environmentDashboardQuery.dataUpdatedAt])
 
   const lastUpdatedText = useMemo(() => {
     if (!lastUpdatedAt) {
@@ -67,13 +72,43 @@ export function DashboardPage() {
     setIsManualRefreshing(true)
 
     try {
-      await Promise.all([refetchSummary(), refetchTransactions()])
+      await Promise.all([
+        refetchSummary(),
+        refetchTransactions(),
+        queryClient.invalidateQueries({ queryKey: ['environment', 'dashboard'] }),
+      ])
     }
     finally {
       setIsManualRefreshing(false)
       setNow(Date.now())
     }
   }
+
+  async function handleEnvironmentRefresh(event: React.MouseEvent<HTMLButtonElement>): Promise<void> {
+    event.preventDefault()
+    event.stopPropagation()
+
+    setIsEnvironmentRefreshing(true)
+
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['environment', 'dashboard'] })
+    }
+    finally {
+      setIsEnvironmentRefreshing(false)
+    }
+  }
+
+  const hasEnvironmentAlert =
+    (environmentDashboardQuery.data?.warningCount ?? 0) > 0 ||
+    (environmentDashboardQuery.data?.dangerCount ?? 0) > 0
+
+  const environmentVariant = environmentDashboardQuery.isLoading
+    ? 'default'
+    : (environmentDashboardQuery.data?.dangerCount ?? 0) > 0
+      ? 'danger'
+      : (environmentDashboardQuery.data?.warningCount ?? 0) > 0
+        ? 'warning'
+        : 'success'
 
   return (
     <div className="space-y-6">
@@ -113,13 +148,64 @@ export function DashboardPage() {
           change="3일 이내"
           variant="warning"
         />
-        <StatCard
-          icon="🌡️"
-          label="환경 상태"
-          value="정상"
-          change="4.2°C / 65%"
-          variant="success"
-        />
+        <div className="relative rounded-xl">
+          <Link to="/environment" className="absolute inset-0 z-0 rounded-xl" aria-label="환경 페이지로 이동" />
+          <div className="relative z-10 rounded-xl">
+            {hasEnvironmentAlert ? (
+              <Link
+                to="/environment"
+                className="absolute right-3 top-3 z-20 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                이상 감지
+              </Link>
+            ) : null}
+            <button
+              type="button"
+              onClick={(event) => {
+                void handleEnvironmentRefresh(event)
+              }}
+              className="absolute bottom-3 right-3 z-10 rounded-full border border-neutral-200 bg-white p-2 text-text-secondary hover:bg-neutral-50"
+              aria-label="환경 카드 새로고침"
+            >
+              <RefreshCw className={`h-4 w-4 ${isEnvironmentRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            {environmentDashboardQuery.isLoading ? (
+              <div className="flex items-center gap-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm animate-pulse">
+                <div className="h-12 w-12 rounded-full bg-neutral-200" />
+                <div className="space-y-2">
+                  <div className="h-4 w-20 rounded bg-neutral-200" />
+                  <div className="h-8 w-32 rounded bg-neutral-200" />
+                  <div className="h-3 w-40 rounded bg-neutral-200" />
+                </div>
+              </div>
+            ) : environmentDashboardQuery.error ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
+                <p className="text-sm font-medium text-red-600">환경 상태를 불러오지 못했습니다.</p>
+                <p className="mt-1 text-xs text-red-500">카드를 눌러 환경 페이지에서 다시 확인하세요.</p>
+              </div>
+            ) : (environmentDashboardQuery.data?.totalSensors ?? 0) === 0 ? (
+              <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="text-3xl">🌡️</div>
+                  <div>
+                    <h3 className="mb-1 text-sm font-medium text-text-secondary">환경 상태</h3>
+                    <p className="text-xl font-bold text-neutral-500">센서 없음</p>
+                    <span className="text-xs text-text-light">환경 페이지에서 센서를 등록하세요</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <StatCard
+                icon="🌡️"
+                label="환경 상태"
+                value={`${environmentDashboardQuery.data?.activeSensors ?? 0} / ${environmentDashboardQuery.data?.totalSensors ?? 0}`}
+                change={`주의 ${environmentDashboardQuery.data?.warningCount ?? 0} · 위험 ${environmentDashboardQuery.data?.dangerCount ?? 0}`}
+                variant={environmentVariant}
+              />
+            )}
+          </div>
+        </div>
         <StatCard
           icon="📊"
           label="오늘 입출고"

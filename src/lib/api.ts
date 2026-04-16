@@ -14,7 +14,7 @@ import { useAuthStore } from '@/stores/authStore'
  * Axios instance configured for StockOps API.
  * Base URL is configurable via VITE_API_BASE_URL environment variable.
  */
-const api = axios.create({
+export const api = axios.create({
   // Use relative path so nginx proxy handles API requests
   baseURL: '/api',
   headers: {

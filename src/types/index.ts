@@ -6,6 +6,7 @@
  */
 
 export * from './inbound'
+export * from './environment'
 export * from './location'
 export * from './notification'
 export * from './outbound'
