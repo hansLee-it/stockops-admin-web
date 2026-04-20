@@ -15,7 +15,8 @@ import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { 
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, 
   MapPin, LogOut, Clock, Settings,
-  Building2, Warehouse, Menu, X
+  Building2, Warehouse, Menu, X,
+  Thermometer
 } from 'lucide-react'
 
 interface NavItem {
@@ -26,6 +27,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { to: '/dashboard', label: '대시보드', icon: LayoutDashboard },
+  { to: '/environment', label: '환경 모니터링', icon: Thermometer },
   { to: '/centers', label: '센터 관리', icon: Building2 },
   { to: '/warehouses', label: '창고 관리', icon: Warehouse },
   { to: '/products', label: '상품 관리', icon: Package },
