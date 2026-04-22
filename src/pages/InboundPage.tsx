@@ -424,13 +424,25 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!productId) return
+
+    const parsedQuantity = Number(quantity)
+    const parsedLocationId = Number(locationId)
+
+    if (!quantity.trim() || Number.isNaN(parsedQuantity) || parsedQuantity <= 0) {
+      return
+    }
+
+    if (!locationId.trim() || Number.isNaN(parsedLocationId)) {
+      return
+    }
+
     addItemMutation.mutate(
       {
         productId,
         lotNumber,
         expiryDate: expiryDate || undefined,
-        quantity: parseInt(quantity),
-        locationId: parseInt(locationId),
+        quantity: parsedQuantity,
+        locationId: parsedLocationId,
       },
       {
         onSuccess: () => {

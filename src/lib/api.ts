@@ -8,6 +8,7 @@
 
 import axios from 'axios'
 import { getErrorMessage, showErrorToast } from '@/lib/httpError'
+import { showToast } from '@/lib/toast'
 import { useAuthStore } from '@/stores/authStore'
 
 /**
@@ -57,6 +58,10 @@ api.interceptors.response.use(
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       useAuthStore.getState().logout()
       window.location.href = '/login'
+    }
+
+    if (axios.isAxiosError(error) && (error.response?.status ?? 0) >= 500) {
+      showToast({ message: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', variant: 'error' })
     }
 
     return Promise.reject(error)

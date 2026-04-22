@@ -8,16 +8,12 @@
  */
 
 import axios from 'axios'
-
-const HTTP_ERROR_TOAST_ID = 'stockops-http-error-toast'
-const HTTP_ERROR_TOAST_DURATION_MS = 4000
+import { showToast } from '@/lib/toast'
 
 /**
  * User-facing message for timeout or network connectivity failures.
  */
 export const NETWORK_ERROR_MESSAGE = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.'
-
-let activeToastTimeout: number | undefined
 
 /**
  * Returns a user-facing message for timeout and network transport failures.
@@ -46,48 +42,41 @@ export function getErrorMessage(error: unknown): string | null {
 
 /**
  * Shows a temporary toast for network-related HTTP errors.
- * Reuses a single DOM element so repeated failures do not stack endlessly.
+ * Delegates to the shared {@link showToast} utility with the error variant.
  *
  * @param message - Message shown to the user
- * @returns Nothing
  */
 export function showErrorToast(message: string): void {
-  if (typeof document === 'undefined' || !document.body) {
-    return
+  showToast({ message, variant: 'error' })
+}
+
+/**
+ * Extracts a user-facing error message from a failed API call.
+ * Checks for network/timeout errors first, then inspects the Axios response
+ * body for a `message` field, and falls back to the provided default.
+ *
+ * @param error - Unknown error thrown during an API request
+ * @param fallback - Default message when no specific cause is found
+ * @returns User-facing error message
+ * @example
+ * const msg = getServerErrorMessage(err, '저장에 실패했습니다.')
+ */
+export function getServerErrorMessage(error: unknown, fallback: string): string {
+  const networkMessage = getErrorMessage(error)
+  if (networkMessage) {
+    return networkMessage
   }
 
-  document.getElementById(HTTP_ERROR_TOAST_ID)?.remove()
+  if (axios.isAxiosError(error)) {
+    const responseMessage =
+      error.response?.data && typeof error.response.data === 'object'
+        ? Reflect.get(error.response.data, 'message')
+        : null
 
-  const toast = document.createElement('div')
-  toast.id = HTTP_ERROR_TOAST_ID
-  toast.setAttribute('role', 'alert')
-  toast.textContent = message
-
-  Object.assign(toast.style, {
-    position: 'fixed',
-    left: '50%',
-    bottom: '24px',
-    transform: 'translateX(-50%)',
-    zIndex: '9999',
-    maxWidth: 'calc(100vw - 32px)',
-    padding: '12px 16px',
-    borderRadius: '8px',
-    backgroundColor: '#dc2626',
-    color: '#ffffff',
-    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-    fontSize: '14px',
-    lineHeight: '20px',
-    fontWeight: '500',
-  } satisfies Partial<CSSStyleDeclaration>)
-
-  document.body.appendChild(toast)
-
-  if (activeToastTimeout !== undefined) {
-    window.clearTimeout(activeToastTimeout)
+    if (typeof responseMessage === 'string' && responseMessage.trim().length > 0) {
+      return responseMessage
+    }
   }
 
-  activeToastTimeout = window.setTimeout(() => {
-    document.getElementById(HTTP_ERROR_TOAST_ID)?.remove()
-    activeToastTimeout = undefined
-  }, HTTP_ERROR_TOAST_DURATION_MS)
+  return fallback
 }

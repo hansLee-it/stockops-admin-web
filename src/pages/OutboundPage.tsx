@@ -190,6 +190,8 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
   const [error, setError] = useState('')
   const [showScanner, setShowScanner] = useState(false)
   const [scanError, setScanError] = useState('')
+  const [selectedProductId, setSelectedProductId] = useState('')
+  const [quantity, setQuantity] = useState('')
 
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
@@ -202,16 +204,9 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
   const handleBarcodeScan = (barcode: string) => {
     const product = products.find((p) => p.barcode === barcode)
     if (product) {
-      const select = document.getElementById('product-select') as HTMLSelectElement
-      const quantityInput = document.getElementById('quantity-input') as HTMLInputElement
-      if (select) {
-        select.value = String(product.id)
-      }
+      setSelectedProductId(String(product.id))
       setScanError('')
       setShowScanner(false)
-      if (quantityInput) {
-        quantityInput.focus()
-      }
     } else {
       setScanError(`바코드 '${barcode}'에 해당하는 상품을 찾을 수 없습니다.`)
     }
@@ -249,14 +244,12 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
   }
 
   const handleAddItem = () => {
-    const select = document.getElementById('product-select') as HTMLSelectElement
-    const quantityInput = document.getElementById('quantity-input') as HTMLInputElement
-    
-    const productId = Number(select.value)
-    const quantity = Number(quantityInput.value)
-    const productName = select.options[select.selectedIndex].text
+    const productId = Number(selectedProductId)
+    const parsedQuantity = Number(quantity)
+    const selectedProduct = products.find((p) => p.id === productId)
+    const productName = selectedProduct?.name ?? ''
 
-    if (!productId || quantity <= 0) {
+    if (!productId || !selectedProduct || parsedQuantity <= 0 || Number.isNaN(parsedQuantity)) {
       setError('Please select a product and enter a valid quantity')
       return
     }
@@ -267,12 +260,12 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
     }
 
     addItemMutation.mutate(
-      { outboundId: createdOutbound.id, request: { productId, quantity } },
+      { outboundId: createdOutbound.id, request: { productId, quantity: parsedQuantity } },
       {
         onSuccess: () => {
-          setItems([...items, { productId, quantity, productName }])
-          select.value = ''
-          quantityInput.value = ''
+          setItems([...items, { productId, quantity: parsedQuantity, productName }])
+          setSelectedProductId('')
+          setQuantity('')
           setError('')
         },
         onError: (err: unknown) => {
@@ -353,6 +346,8 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
                 <>
                   <select
                     id="product-select"
+                    value={selectedProductId}
+                    onChange={(e) => setSelectedProductId(e.target.value)}
                     className="w-full p-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">Select a product</option>
@@ -402,6 +397,8 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
                 id="quantity-input"
                 type="number"
                 min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
                 className="w-full p-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Enter quantity"
               />

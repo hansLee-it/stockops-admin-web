@@ -8,14 +8,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { ComponentType, FormEvent } from 'react'
-import axios from 'axios'
 import api from '@/lib/api'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { CheckCircle2, Clock3, Download, Eye, PackageCheck, Plus, Send, Truck, Upload, X, XCircle } from 'lucide-react'
 import { downloadExcelTemplate } from '@/api/excel'
 import { ExcelUploadModal } from '@/components/common/ExcelUploadModal'
 import { EmptyState } from '@/components/common/EmptyState'
-import { getErrorMessage, showErrorToast } from '@/lib/httpError'
+import { showErrorToast, getServerErrorMessage } from '@/lib/httpError'
+import { showToast } from '@/lib/toast'
 
 interface Center {
   id: number
@@ -94,11 +94,7 @@ type PurchaseOrderStatus =
 type PurchaseOrderAction = 'submit' | 'accept' | 'reject' | 'createShipment' | 'complete'
 type DetailTab = 'details' | 'history'
 
-const SUCCESS_TOAST_ID = 'stockops-purchase-order-success-toast'
-const SUCCESS_TOAST_DURATION_MS = 4000
 const TRANSITION_DISABLED_TOOLTIP = '현재 상태에서 사용할 수 없습니다'
-
-let activeSuccessToastTimeout: number | undefined
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT: 'border-neutral-200 bg-neutral-50 text-neutral-700',
@@ -170,47 +166,6 @@ const ACTION_DEFINITIONS: ActionDefinition[] = [
   },
 ]
 
-function showSuccessToast(message: string): void {
-  if (typeof document === 'undefined' || !document.body) {
-    return
-  }
-
-  document.getElementById(SUCCESS_TOAST_ID)?.remove()
-
-  const toast = document.createElement('div')
-  toast.id = SUCCESS_TOAST_ID
-  toast.setAttribute('role', 'status')
-  toast.textContent = message
-
-  Object.assign(toast.style, {
-    position: 'fixed',
-    left: '50%',
-    bottom: '24px',
-    transform: 'translateX(-50%)',
-    zIndex: '9999',
-    maxWidth: 'calc(100vw - 32px)',
-    padding: '12px 16px',
-    borderRadius: '8px',
-    backgroundColor: '#16a34a',
-    color: '#ffffff',
-    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-    fontSize: '14px',
-    lineHeight: '20px',
-    fontWeight: '500',
-  } satisfies Partial<CSSStyleDeclaration>)
-
-  document.body.appendChild(toast)
-
-  if (activeSuccessToastTimeout !== undefined) {
-    window.clearTimeout(activeSuccessToastTimeout)
-  }
-
-  activeSuccessToastTimeout = window.setTimeout(() => {
-    document.getElementById(SUCCESS_TOAST_ID)?.remove()
-    activeSuccessToastTimeout = undefined
-  }, SUCCESS_TOAST_DURATION_MS)
-}
-
 function formatDateTime(value?: string): string {
   if (!value) {
     return '-'
@@ -230,25 +185,6 @@ function getStatusBadgeClassName(status: string): string {
 
 function getValidActions(status: string): PurchaseOrderAction[] {
   return VALID_TRANSITIONS[status] ?? []
-}
-
-function getTransitionErrorMessage(actionLabel: string, error: unknown): string {
-  const networkMessage = getErrorMessage(error)
-  if (networkMessage) {
-    return networkMessage
-  }
-
-  if (axios.isAxiosError(error)) {
-    const responseMessage = error.response?.data && typeof error.response.data === 'object'
-      ? Reflect.get(error.response.data, 'message')
-      : null
-
-    if (typeof responseMessage === 'string' && responseMessage.trim().length > 0) {
-      return responseMessage
-    }
-  }
-
-  return `${actionLabel} 처리에 실패했습니다. 다시 시도해주세요.`
 }
 
 function buildShipmentPayload(po: PurchaseOrder): Record<string, string> {
@@ -432,7 +368,7 @@ export function PurchaseOrdersPage() {
       await fetchPurchaseOrderDetail(po.id)
     } catch (error) {
       console.error('Failed to fetch purchase order detail:', error)
-      showErrorToast(getTransitionErrorMessage('발주 상세 조회', error))
+      showErrorToast(getServerErrorMessage(error, '발주 상세 조회 처리에 실패했습니다. 다시 시도해주세요.'))
     } finally {
       setIsDetailLoading(false)
     }
@@ -454,7 +390,7 @@ export function PurchaseOrdersPage() {
       setFormData({ centerId: '', warehouseId: '' })
     } catch (error) {
       console.error('Failed to create purchase order:', error)
-      showErrorToast(getTransitionErrorMessage('발주 생성', error))
+      showErrorToast(getServerErrorMessage(error, '발주 생성 처리에 실패했습니다. 다시 시도해주세요.'))
     }
   }
 
@@ -503,10 +439,10 @@ export function PurchaseOrdersPage() {
         await fetchPurchaseOrderDetail(po.id)
       }
 
-      showSuccessToast(actionDefinition.successMessage)
+      showToast({ message: actionDefinition.successMessage, variant: 'success' })
     } catch (error) {
       console.error(`Failed to ${action} purchase order:`, error)
-      showErrorToast(getTransitionErrorMessage(actionDefinition.label, error))
+      showErrorToast(getServerErrorMessage(error, `${actionDefinition.label} 처리에 실패했습니다. 다시 시도해주세요.`))
     } finally {
       setTransitioningPoId(null)
     }

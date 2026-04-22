@@ -8,9 +8,9 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { DragEvent } from 'react'
-import axios from 'axios'
 import { AlertCircle, Download, FileSpreadsheet, Upload, X } from 'lucide-react'
 import { downloadExcelTemplate, uploadExcelWorkbook } from '@/api/excel'
+import { getServerErrorMessage } from '@/lib/httpError'
 import type { ExcelEntityType, ExcelImportResult } from '@/types/excel'
 
 interface ExcelUploadModalProps {
@@ -109,19 +109,7 @@ export function ExcelUploadModal({
         await onImported?.()
       }
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const message = error.response?.data && typeof error.response.data === 'object'
-          ? Reflect.get(error.response.data, 'message')
-          : null
-
-        if (typeof message === 'string' && message.trim().length > 0) {
-          setUploadError(message)
-        } else {
-          setUploadError('엑셀 업로드에 실패했습니다. 다시 시도해주세요.')
-        }
-      } else {
-        setUploadError('엑셀 업로드에 실패했습니다. 다시 시도해주세요.')
-      }
+      setUploadError(getServerErrorMessage(error, '엑셀 업로드에 실패했습니다. 다시 시도해주세요.'))
     } finally {
       setIsUploading(false)
     }

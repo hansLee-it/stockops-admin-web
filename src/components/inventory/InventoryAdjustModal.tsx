@@ -8,89 +8,16 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import axios from 'axios'
 import { X } from 'lucide-react'
 import { useAdjustInventory, useAdjustmentReasonCodes } from '@/hooks/useAdjustInventory'
 import type { Inventory } from '@/types/inventory'
+import { showToast } from '@/lib/toast'
+import { getServerErrorMessage } from '@/lib/httpError'
 
 interface InventoryAdjustModalProps {
   isOpen: boolean
   inventory: Inventory | null
   onClose: () => void
-}
-
-const SUCCESS_TOAST_ID = 'stockops-success-toast'
-const SUCCESS_TOAST_DURATION_MS = 4000
-
-let activeSuccessToastTimeout: number | undefined
-
-/**
- * Shows a temporary success toast after the adjustment request is created.
- *
- * @param message - Message shown to the user
- * @returns Nothing
- */
-function showSuccessToast(message: string): void {
-  if (typeof document === 'undefined' || !document.body) {
-    return
-  }
-
-  document.getElementById(SUCCESS_TOAST_ID)?.remove()
-
-  const toast = document.createElement('div')
-  toast.id = SUCCESS_TOAST_ID
-  toast.setAttribute('role', 'status')
-  toast.textContent = message
-
-  Object.assign(toast.style, {
-    position: 'fixed',
-    left: '50%',
-    bottom: '24px',
-    transform: 'translateX(-50%)',
-    zIndex: '9999',
-    maxWidth: 'calc(100vw - 32px)',
-    padding: '12px 16px',
-    borderRadius: '8px',
-    backgroundColor: '#16a34a',
-    color: '#ffffff',
-    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-    fontSize: '14px',
-    lineHeight: '20px',
-    fontWeight: '500',
-  } satisfies Partial<CSSStyleDeclaration>)
-
-  document.body.appendChild(toast)
-
-  if (activeSuccessToastTimeout !== undefined) {
-    window.clearTimeout(activeSuccessToastTimeout)
-  }
-
-  activeSuccessToastTimeout = window.setTimeout(() => {
-    document.getElementById(SUCCESS_TOAST_ID)?.remove()
-    activeSuccessToastTimeout = undefined
-  }, SUCCESS_TOAST_DURATION_MS)
-}
-
-/**
- * Returns a user-facing error message for failed adjustment requests.
- *
- * @param error - Unknown error thrown during submission
- * @returns User-facing failure message
- */
-function getSubmitErrorMessage(error: unknown): string {
-  if (!axios.isAxiosError(error)) {
-    return '재고 조정 요청을 등록하지 못했습니다. 다시 시도해주세요.'
-  }
-
-  const responseMessage = error.response?.data && typeof error.response.data === 'object'
-    ? Reflect.get(error.response.data, 'message')
-    : null
-
-  if (typeof responseMessage === 'string' && responseMessage.trim().length > 0) {
-    return responseMessage
-  }
-
-  return '재고 조정 요청을 등록하지 못했습니다. 다시 시도해주세요.'
 }
 
 /**
@@ -173,10 +100,10 @@ export function InventoryAdjustModal({
         note: note.trim() || undefined,
       })
 
-      showSuccessToast('재고 조정 요청이 등록되었습니다.')
+      showToast({ message: '재고 조정 요청이 등록되었습니다.', variant: 'success' })
       onClose()
     } catch (error) {
-      setFormError(getSubmitErrorMessage(error))
+      setFormError(getServerErrorMessage(error, '재고 조정 요청을 등록하지 못했습니다. 다시 시도해주세요.'))
     }
   }
 
