@@ -61,11 +61,11 @@ export function DashboardPage() {
 
   const lastUpdatedText = useMemo(() => {
     if (!lastUpdatedAt) {
-      return 'Last updated: waiting for data'
+      return '마지막 갱신: 데이터 대기 중'
     }
 
     const secondsAgo = Math.max(0, Math.floor((now - lastUpdatedAt) / 1000))
-    return `Last updated: ${secondsAgo} seconds ago`
+    return `마지막 갱신: ${secondsAgo}초 전`
   }, [lastUpdatedAt, now])
 
   async function handleManualRefresh(): Promise<void> {

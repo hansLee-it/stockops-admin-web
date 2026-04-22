@@ -101,7 +101,7 @@ export function WarehousesPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this warehouse?')) return
+    if (!confirm('이 창고를 삭제하시겠습니까?')) return
     try {
       await api.delete(`/v1/warehouses/${id}`)
       fetchWarehouses()

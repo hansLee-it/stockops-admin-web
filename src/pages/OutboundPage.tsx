@@ -60,13 +60,13 @@ export function OutboundPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">Outbound Management</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">출고 관리</h1>
         <button
           onClick={() => setIsCreateModalOpen(true)}
           className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          New Outbound
+          신규 출고 등록
         </button>
       </div>
 
@@ -77,9 +77,9 @@ export function OutboundPage() {
           onChange={(e) => setStatusFilter(e.target.value as OutboundStatus | '')}
           className="p-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
-          <option value="">All</option>
-          <option value="DRAFT">Draft</option>
-          <option value="CONFIRMED">Confirmed</option>
+          <option value="">전체</option>
+          <option value="DRAFT">임시저장</option>
+          <option value="CONFIRMED">확정</option>
         </select>
       </div>
 
@@ -102,11 +102,11 @@ export function OutboundPage() {
             <thead className="bg-neutral-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Customer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Qty</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">일자</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">고객</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">상태</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">총 수량</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">작업</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-neutral-200">
@@ -288,7 +288,7 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-neutral-900">Create New Outbound</h2>
+          <h2 className="text-lg font-semibold text-neutral-900">신규 출고 등록</h2>
           <button onClick={onClose} className="text-neutral-500 hover:text-neutral-700">
             <X className="w-5 h-5" />
           </button>
@@ -341,7 +341,7 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1 text-neutral-700">Product</label>
+              <label className="block text-sm font-medium mb-1 text-neutral-700">상품</label>
               {!showScanner ? (
                 <>
                   <select
@@ -392,7 +392,7 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1 text-neutral-700">Quantity</label>
+              <label className="block text-sm font-medium mb-1 text-neutral-700">수량</label>
               <input
                 id="quantity-input"
                 type="number"
@@ -414,7 +414,7 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
 
             {items.length > 0 && (
               <div className="mb-4">
-                <h3 className="text-sm font-medium mb-2 text-neutral-700">Items Added</h3>
+                <h3 className="text-sm font-medium mb-2 text-neutral-700">추가된 항목</h3>
                 <ul className="border border-neutral-200 rounded divide-y divide-neutral-200">
                   {items.map((item, index) => (
                     <li key={index} className="p-2 text-sm text-neutral-900">
@@ -473,15 +473,15 @@ function OutboundDetailModal({ outbound, onClose }: { outbound: OutboundDTO; onC
 
         <div className="mb-6 grid grid-cols-2 gap-4">
           <div>
-            <span className="text-sm font-medium text-neutral-500">Date</span>
+            <span className="text-sm font-medium text-neutral-500">일자</span>
             <p className="text-neutral-900">{outbound.outboundDate}</p>
           </div>
           <div>
-            <span className="text-sm font-medium text-neutral-500">Customer</span>
+            <span className="text-sm font-medium text-neutral-500">고객</span>
             <p className="text-neutral-900">{outbound.customer}</p>
           </div>
           <div>
-            <span className="text-sm font-medium text-neutral-500">Status</span>
+            <span className="text-sm font-medium text-neutral-500">상태</span>
             <p>
               <span className={`px-2 py-1 text-xs font-medium rounded ${
                 outbound.status === 'CONFIRMED' 
@@ -493,13 +493,13 @@ function OutboundDetailModal({ outbound, onClose }: { outbound: OutboundDTO; onC
             </p>
           </div>
           <div>
-            <span className="text-sm font-medium text-neutral-500">Total Quantity</span>
+            <span className="text-sm font-medium text-neutral-500">총 수량</span>
             <p className="text-neutral-900">{outbound.totalQuantity}</p>
           </div>
         </div>
 
         <div className="mb-4">
-          <h3 className="text-sm font-medium mb-2 text-neutral-700">Items</h3>
+          <h3 className="text-sm font-medium mb-2 text-neutral-700">항목</h3>
           {isLoading ? (
             <div className="text-neutral-600">Loading items...</div>
           ) : items.length === 0 ? (
@@ -509,9 +509,9 @@ function OutboundDetailModal({ outbound, onClose }: { outbound: OutboundDTO; onC
               <table className="min-w-full divide-y divide-neutral-200">
                 <thead className="bg-neutral-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500">Product</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500">Lot</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500">Quantity</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500">상품</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500">LOT</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500">수량</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">

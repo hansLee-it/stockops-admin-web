@@ -75,7 +75,7 @@ export function CentersPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this center?')) return
+    if (!confirm('이 센터를 삭제하시겠습니까?')) return
     try {
       await api.delete(`/v1/centers/${id}`)
       fetchCenters()
