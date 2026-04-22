@@ -111,7 +111,7 @@ export function LoginPage() {
           disabled={loading}
           className="w-full bg-primary-600 text-white p-2 rounded hover:bg-primary-700 disabled:opacity-50 transition-colors"
         >
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? '로그인 중...' : '로그인'}
         </button>
       </form>
     </div>

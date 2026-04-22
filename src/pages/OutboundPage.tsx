@@ -47,7 +47,7 @@ export function OutboundPage() {
   })
 
   const handleConfirm = (id: number) => {
-    if (window.confirm('Are you sure you want to confirm this outbound? This will allocate lots using FEFO and decrease inventory.')) {
+    if (window.confirm('출고를 확정하시겠습니까? FEFO 방식으로 LOT이 할당되고 재고가 차감됩니다.')) {
       confirmMutation.mutate(id)
     }
   }

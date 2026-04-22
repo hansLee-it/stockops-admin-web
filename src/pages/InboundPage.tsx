@@ -37,16 +37,16 @@ export function InboundPage() {
   const { data: inbounds, isLoading, error } = useInbounds(statusFilter || undefined)
 
   if (isLoading) {
-    return <EmptyState title="Loading..." description="Fetching inbound data" variant="empty" />
+    return <EmptyState title="로딩 중..." description="입고 데이터를 불러오는 중입니다" variant="empty" />
   }
 
   if (error) {
     return (
       <EmptyState
-        title="Failed to load data"
+        title="데이터 로딩 실패"
         description={error.message}
         variant="error"
-        actionLabel="Retry"
+        actionLabel="다시 시도"
         onAction={() => window.location.reload()}
       />
     )
@@ -55,7 +55,7 @@ export function InboundPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">Inbound Management</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">입고 관리</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={() => void downloadExcelTemplate('inbounds')}
@@ -76,21 +76,21 @@ export function InboundPage() {
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
-            New Inbound
+            입고 등록
           </button>
         </div>
       </div>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium text-neutral-700 mb-1">Status Filter</label>
+        <label className="block text-sm font-medium text-neutral-700 mb-1">상태 필터</label>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as InboundStatus | '')}
           className="px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
-          <option value="">All Statuses</option>
-          <option value="DRAFT">Draft</option>
-          <option value="CONFIRMED">Confirmed</option>
+          <option value="">전체 상태</option>
+          <option value="DRAFT">임시저장</option>
+          <option value="CONFIRMED">확정</option>
         </select>
       </div>
 
@@ -100,10 +100,10 @@ export function InboundPage() {
             <thead className="bg-neutral-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Supplier</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Qty</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">일자</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">공급처</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">상태</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">총 수량</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
