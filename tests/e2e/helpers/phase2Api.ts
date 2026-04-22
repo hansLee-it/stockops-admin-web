@@ -1,4 +1,4 @@
-import type { Page, Request, Route } from '@playwright/test'
+import type { Page, Route } from '@playwright/test'
 import type { AIRecommendation } from '@/types/aiRecommendation'
 import type { Phase2BrowserFixtureState } from '../fixtures/phase2Fixtures'
 
