@@ -8,16 +8,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-
-/**
- * User information stored in the auth state.
- */
-interface User {
-  id: number
-  email: string
-  name: string
-  role: string
-}
+import type { AuthenticatedUser } from '@/types/auth'
 
 /**
  * Authentication state interface.
@@ -26,9 +17,9 @@ interface AuthState {
   /** JWT access token */
   token: string | null
   /** Authenticated user information */
-  user: User | null
+  user: AuthenticatedUser | null
   /** Store JWT token and user info after successful login */
-  login: (token: string, user: User) => void
+  login: (token: string, user: AuthenticatedUser) => void
   /** Clear auth state on logout */
   logout: () => void
   /** Check if user is currently authenticated */
@@ -43,7 +34,7 @@ interface AuthState {
  * const { token, user, login, logout, isAuthenticated } = useAuthStore()
  * 
  * // Login
- * login(accessToken, { id: 1, email: 'user@example.com', name: 'User', role: 'ADMIN' })
+ * login(accessToken, { id: 1, email: 'user@example.com', name: 'User', role: 'ADMIN', permissions: [], scopeMetadata: { global: true, assignments: [{ scope: 'GLOBAL', centerId: null, warehouseId: null }], centerIds: [], warehouseIds: [] } })
  * 
  * // Check authentication
  * if (isAuthenticated()) { ... }

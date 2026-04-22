@@ -11,12 +11,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { 
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine, 
   MapPin, LogOut, Clock, Settings,
   Building2, Warehouse, Menu, X,
-  Thermometer
+  Thermometer, BarChart3, Brain
 } from 'lucide-react'
 
 interface NavItem {
@@ -37,6 +38,8 @@ const navItems: NavItem[] = [
   { to: '/locations', label: '위치 관리', icon: MapPin },
   { to: '/purchase-orders', label: '발주 관리', icon: Package },
   { to: '/expiry', label: '유통기한', icon: Clock },
+  { to: '/reports', label: '리포트', icon: BarChart3 },
+  { to: '/ai', label: 'AI 발주 추천', icon: Brain },
   { to: '/settings', label: '설정', icon: Settings },
 ]
 
@@ -49,6 +52,7 @@ const navItems: NavItem[] = [
  */
 export function MainLayout() {
   const { user, logout } = useAuthStore()
+  const isOnline = useOnlineStatus()
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -139,7 +143,7 @@ export function MainLayout() {
   }
 
   return (
-    <div className="min-h-screen flex bg-bg-secondary">
+    <div data-testid="app-shell" className="min-h-screen flex bg-bg-secondary">
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:bg-transparent"
@@ -247,6 +251,15 @@ export function MainLayout() {
             </button>
           </div>
         </header>
+
+        {!isOnline && (
+          <div
+            className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+            data-testid="offline-readonly-banner"
+          >
+            오프라인 읽기 전용 모드입니다. 조회는 유지되지만 승인, 생성, 다운로드 요청은 비활성화됩니다.
+          </div>
+        )}
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           <Outlet />

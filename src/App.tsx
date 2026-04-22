@@ -20,6 +20,8 @@ import { WarehousesPage } from '@/pages/WarehousesPage'
 import { PurchaseOrdersPage } from '@/pages/PurchaseOrdersPage'
 import { ProductsPage } from '@/pages/ProductsPage'
 import { EnvironmentPage } from '@/pages/EnvironmentPage'
+import { ReportsPage } from '@/pages/ReportsPage'
+import { AIFeaturesPage } from '@/pages/AIFeaturesPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -64,6 +66,8 @@ function App() {
           <Route path="expiry" element={<ExpiryPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="environment" element={<EnvironmentPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="ai" element={<AIFeaturesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

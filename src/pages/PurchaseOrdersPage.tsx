@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ComponentType, FormEvent } from 'react'
 import axios from 'axios'
 import api from '@/lib/api'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { CheckCircle2, Clock3, Download, Eye, PackageCheck, Plus, Send, Truck, Upload, X, XCircle } from 'lucide-react'
 import { downloadExcelTemplate } from '@/api/excel'
 import { ExcelUploadModal } from '@/components/common/ExcelUploadModal'
@@ -356,6 +357,7 @@ function buildHistoryEvents(po: PurchaseOrder | null): StatusHistoryEvent[] {
 }
 
 export function PurchaseOrdersPage() {
+  const isOnline = useOnlineStatus()
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([])
   const [centers, setCenters] = useState<Center[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
@@ -465,6 +467,11 @@ export function PurchaseOrdersPage() {
       return
     }
 
+    if (!isOnline) {
+      showErrorToast('오프라인 읽기 전용 모드에서는 상태를 변경할 수 없습니다.')
+      return
+    }
+
     setTransitioningPoId(po.id)
 
     try {
@@ -511,7 +518,7 @@ export function PurchaseOrdersPage() {
 
     return ACTION_DEFINITIONS.map((action) => {
       const isAllowed = validActions.includes(action.id)
-      const isDisabled = isBusy || !isAllowed
+      const isDisabled = isBusy || !isAllowed || !isOnline
       const Icon = action.icon
       const button = (
         <button
@@ -520,9 +527,9 @@ export function PurchaseOrdersPage() {
           disabled={isDisabled}
           onClick={() => void handleStatusAction(po, action.id)}
           className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-            isAllowed && !isBusy
-              ? action.activeClassName
-              : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+             isAllowed && !isBusy && isOnline
+               ? action.activeClassName
+               : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
           }`}
         >
           <Icon className="w-4 h-4" />
@@ -538,9 +545,13 @@ export function PurchaseOrdersPage() {
         )
       }
 
-      if (!isAllowed) {
+      if (!isAllowed || !isOnline) {
         return (
-          <span key={action.id} title={TRANSITION_DISABLED_TOOLTIP} className="inline-flex">
+          <span
+            key={action.id}
+            title={!isOnline ? '오프라인 읽기 전용 모드에서는 상태를 변경할 수 없습니다.' : TRANSITION_DISABLED_TOOLTIP}
+            className="inline-flex"
+          >
             {button}
           </span>
         )
@@ -555,22 +566,28 @@ export function PurchaseOrdersPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">발주 관리</h1>
         <div className="flex items-center gap-3">
-          <button
+            <button
+            type="button"
             onClick={() => void downloadExcelTemplate('purchase-orders')}
+            disabled={!isOnline}
             className="flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-neutral-700 hover:bg-neutral-50"
           >
             <Download className="w-4 h-4" />
             템플릿 다운로드
           </button>
           <button
+            type="button"
             onClick={() => setShowExcelModal(true)}
+            disabled={!isOnline}
             className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2 text-primary-700 hover:bg-primary-100"
           >
             <Upload className="w-4 h-4" />
             엑셀 업로드
           </button>
           <button
+            type="button"
             onClick={() => setShowModal(true)}
+            disabled={!isOnline}
             className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
           >
             <Plus className="w-4 h-4" />
@@ -638,7 +655,7 @@ export function PurchaseOrdersPage() {
         </div>
       )}
 
-      {showModal && (
+      {showModal && isOnline && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-md rounded-xl bg-white p-6">
             <h2 className="mb-4 text-xl font-bold">새 발주</h2>

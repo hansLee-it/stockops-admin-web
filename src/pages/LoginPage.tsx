@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/lib/httpError'
 import { useAuthStore } from '@/stores/authStore'
 import api from '@/lib/api'
+import type { LoginResponse } from '@/types/auth'
 
 /**
  * Login page with email/password authentication.
@@ -32,17 +33,15 @@ export function LoginPage() {
     setLoading(true)
 
     try {
-      const response = await api.post('/v1/auth/login', { email, password })
+      const response = await api.post<LoginResponse>('/v1/auth/login', { email, password })
 
-      const { accessToken } = response.data
+      const { accessToken, user } = response.data
 
       if (!accessToken) {
         throw new Error('No accessToken in response')
       }
 
-      const userData = { id: 1, email, name: email.split('@')[0], role: 'USER' }
-
-      login(accessToken, userData)
+      login(accessToken, user)
 
       navigate('/dashboard')
     } catch (err: unknown) {
@@ -83,6 +82,7 @@ export function LoginPage() {
             Email
           </label>
           <input
+            data-testid="login-email"
             id="email"
             type="email"
             value={email}
@@ -96,6 +96,7 @@ export function LoginPage() {
             Password
           </label>
           <input
+            data-testid="login-password"
             id="password"
             type="password"
             value={password}
@@ -105,6 +106,7 @@ export function LoginPage() {
           />
         </div>
         <button
+          data-testid="login-submit"
           type="submit"
           disabled={loading}
           className="w-full bg-primary-600 text-white p-2 rounded hover:bg-primary-700 disabled:opacity-50 transition-colors"
