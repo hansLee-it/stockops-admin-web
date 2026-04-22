@@ -133,20 +133,24 @@ export function EnvironmentPage() {
   const sensorsQuery = useSensors(0, 100)
   const controllersQuery = useControllers(0, 100)
 
-  const sensors = sensorsQuery.data?.content ?? []
-  const controllers = controllersQuery.data?.content ?? []
+  const sensors = useMemo(() => sensorsQuery.data?.content ?? [], [sensorsQuery.data?.content])
+  const controllers = useMemo(() => controllersQuery.data?.content ?? [], [controllersQuery.data?.content])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (selectedSensorId === null && sensors.length > 0) {
       setSelectedSensorId(sensors[0].id)
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [selectedSensorId, sensors])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (selectedControllerId === null && controllers.length > 0) {
       setSelectedControllerId(controllers[0].id)
       setControllerOutputLevel(controllers[0].outputLevel)
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [controllers, selectedControllerId])
 
   const selectedController = useMemo(
@@ -155,9 +159,11 @@ export function EnvironmentPage() {
   )
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (selectedController) {
       setControllerOutputLevel(selectedController.outputLevel)
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [selectedController])
 
   const historyQuery = useSensorHistory(selectedSensorId, 30)

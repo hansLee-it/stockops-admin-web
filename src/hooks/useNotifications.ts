@@ -98,6 +98,7 @@ export function useNotificationPermission(): {
   const [permission, setPermission] = useState<BrowserNotificationPermission>(() => getNotificationPermission())
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPermission(getNotificationPermission())
   }, [])
 

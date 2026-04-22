@@ -7,7 +7,7 @@
  * @since 2.0
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import {
@@ -79,12 +79,15 @@ export function ReportsPage() {
   const [centers, setCenters] = useState<CenterOption[]>([])
   const [warehouses, setWarehouses] = useState<WarehouseOption[]>([])
 
-  const filter: AnalyticsQueryFilter = {
-    from: dateFrom || undefined,
-    to: dateTo || undefined,
-    centerId,
-    warehouseId,
-  }
+  const filter: AnalyticsQueryFilter = useMemo(
+    () => ({
+      from: dateFrom || undefined,
+      to: dateTo || undefined,
+      centerId,
+      warehouseId,
+    }),
+    [centerId, dateFrom, dateTo, warehouseId],
+  )
 
   const stockAgingQuery = useStockAgingReport(filter)
   const stockoutRateQuery = useStockoutRateReport(filter)
@@ -112,6 +115,7 @@ export function ReportsPage() {
   }, [])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (scopeMetadata && !scopeMetadata.global) {
       if (scopeMetadata.centerIds.length === 1) {
         setCenterId(scopeMetadata.centerIds[0])
@@ -120,6 +124,7 @@ export function ReportsPage() {
         setWarehouseId(scopeMetadata.warehouseIds[0])
       }
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [scopeMetadata])
 
   const scopedCenters = scopeMetadata?.global

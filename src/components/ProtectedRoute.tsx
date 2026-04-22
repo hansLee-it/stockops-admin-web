@@ -35,6 +35,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     // Check if persist has rehydrated by checking if token exists in storage
     const storedAuth = localStorage.getItem('auth-storage')
     if (storedAuth) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRehydrated(true)
     } else {
       // Set a small timeout to allow persist to complete

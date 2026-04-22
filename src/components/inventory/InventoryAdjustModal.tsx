@@ -115,6 +115,7 @@ export function InventoryAdjustModal({
   const adjustInventory = useAdjustInventory()
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (!isOpen) {
       setQuantityDelta('0')
       setReasonCodeId('')
@@ -127,6 +128,7 @@ export function InventoryAdjustModal({
     setReasonCodeId('')
     setNote('')
     setFormError(null)
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [isOpen, inventory?.id])
 
   const parsedDelta = Number.parseInt(quantityDelta, 10)

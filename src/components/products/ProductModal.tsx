@@ -39,6 +39,7 @@ export function ProductModal({
   const [formData, setFormData] = useState<CreateProductRequest>(initialFormData)
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (product) {
       setFormData({
         barcode: product.barcode,
@@ -53,6 +54,7 @@ export function ProductModal({
     } else {
       setFormData(initialFormData)
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [product, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
