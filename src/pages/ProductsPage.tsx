@@ -11,6 +11,7 @@ import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Download, Upload
 import { downloadExcelTemplate } from '@/api/excel'
 import { ExcelUploadModal } from '@/components/common/ExcelUploadModal'
 import { ProductModal } from '@/components/products/ProductModal'
+import { ProductDetailDrawer } from '@/components/products/ProductDetailDrawer'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import type { ProductDTO, CreateProductRequest, UpdateProductRequest } from '@/types/product'
 import { getProducts, createProduct, updateProduct, deleteProduct } from '@/api/products'
@@ -27,6 +28,8 @@ export function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(0)
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({ open: false, id: null })
+  const [detailProduct, setDetailProduct] = useState<ProductDTO | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const pageSize = 10
 
   useEffect(() => {
@@ -244,7 +247,14 @@ export function ProductsPage() {
                     </tr>
                   ) : (
                     paginatedProducts.map((product) => (
-                      <tr key={product.id} className="hover:bg-neutral-50 transition-colors">
+                      <tr
+                        key={product.id}
+                        className="hover:bg-neutral-50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setDetailProduct(product)
+                          setDetailOpen(true)
+                        }}
+                      >
                         <td className="px-6 py-4 font-mono text-sm">{product.barcode}</td>
                         <td className="px-6 py-4">
                           <div className="font-medium text-neutral-900">{product.name}</div>
@@ -376,6 +386,17 @@ export function ProductsPage() {
         description="정말로 이 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
         variant="destructive"
         confirmLabel="삭제"
+      />
+
+      <ProductDetailDrawer
+        product={detailProduct}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        onEdit={(product) => {
+          setEditingProduct(product)
+          setShowModal(true)
+        }}
+        onDelete={(id) => setDeleteConfirm({ open: true, id })}
       />
     </div>
   )
