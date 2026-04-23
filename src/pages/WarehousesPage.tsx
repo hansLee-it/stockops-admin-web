@@ -6,10 +6,11 @@
  * @since 2.0
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import api from '@/lib/api'
-import { Warehouse, Plus, Edit, Trash2, Building2 } from 'lucide-react'
+import { Plus, Edit, Trash2, Building2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { EmptyState } from '@/components/common/EmptyState'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 
 interface Center {
   id: number
@@ -17,7 +18,7 @@ interface Center {
   name: string
 }
 
-interface Warehouse {
+interface WarehouseItem {
   id: number
   code: string
   name: string
@@ -29,12 +30,15 @@ interface Warehouse {
 }
 
 export function WarehousesPage() {
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([])
+  const [warehouses, setWarehouses] = useState<WarehouseItem[]>([])
   const [centers, setCenters] = useState<Center[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
-  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
+  const [editingWarehouse, setEditingWarehouse] = useState<WarehouseItem | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({ open: false, id: null })
+  const [currentPage, setCurrentPage] = useState(0)
+  const pageSize = 10
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -88,7 +92,7 @@ export function WarehousesPage() {
     }
   }
 
-  const handleEdit = (warehouse: Warehouse) => {
+  const handleEdit = (warehouse: WarehouseItem) => {
     setEditingWarehouse(warehouse)
     setFormData({
       code: warehouse.code,
@@ -101,20 +105,29 @@ export function WarehousesPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('이 창고를 삭제하시겠습니까?')) return
     try {
       await api.delete(`/v1/warehouses/${id}`)
       fetchWarehouses()
     } catch (error) {
       console.error('Failed to delete warehouse:', error)
+    } finally {
+      setDeleteConfirm({ open: false, id: null })
     }
   }
+
+  const paginatedWarehouses = useMemo(() => {
+    const start = currentPage * pageSize
+    return warehouses.slice(start, start + pageSize)
+  }, [warehouses, currentPage])
+
+  const totalPages = Math.ceil(warehouses.length / pageSize)
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">창고 관리</h1>
         <button
+          type="button"
           onClick={() => {
             setEditingWarehouse(null)
             setFormData({ code: '', name: '', address: '', phone: '', centerId: '' })
@@ -153,20 +166,21 @@ export function WarehousesPage() {
           }}
         />
       ) : (
-<div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
-           <table className="w-full">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">코드</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">창고명</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">센터</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">주소</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">상태</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase">작업</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-200">
-{warehouses.map((warehouse) => (
+        <>
+          <div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">코드</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">창고명</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">센터</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">주소</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">상태</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase">작업</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-200">
+                {paginatedWarehouses.map((warehouse) => (
                   <tr key={warehouse.id} className="hover:bg-neutral-50">
                     <td className="px-6 py-4 font-mono text-sm">{warehouse.code}</td>
                     <td className="px-6 py-4 font-medium">{warehouse.name}</td>
@@ -179,8 +193,8 @@ export function WarehousesPage() {
                     <td className="px-6 py-4 text-sm text-text-secondary">{warehouse.address || '-'}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-xs rounded-full ${
-                        warehouse.status === 'ACTIVE' 
-                          ? 'bg-green-100 text-green-700' 
+                        warehouse.status === 'ACTIVE'
+                          ? 'bg-green-100 text-green-700'
                           : 'bg-neutral-100 text-neutral-600'
                       }`}>
                         {warehouse.status}
@@ -188,13 +202,15 @@ export function WarehousesPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
+                        type="button"
                         onClick={() => handleEdit(warehouse)}
                         className="p-2 hover:bg-neutral-100 rounded-lg text-text-secondary"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(warehouse.id)}
+                        type="button"
+                        onClick={() => setDeleteConfirm({ open: true, id: warehouse.id })}
                         className="p-2 hover:bg-red-50 rounded-lg text-red-600"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -202,10 +218,71 @@ export function WarehousesPage() {
                     </td>
                   </tr>
                 ))}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-3">
+              <div className="text-sm text-text-secondary">
+                총 {warehouses.length}개 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, warehouses.length)}개 표시
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
+                  className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = currentPage < 3 ? i : currentPage - 2 + i
+                    if (pageNum >= totalPages) return null
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1 rounded transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-primary-600 text-white'
+                            : 'hover:bg-neutral-100'
+                        }`}
+                      >
+                        {pageNum + 1}
+                      </button>
+                    )
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                  disabled={currentPage === totalPages - 1}
+                  className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, id: null })}
+        onConfirm={() => {
+          if (deleteConfirm.id !== null) {
+            void handleDelete(deleteConfirm.id)
+          }
+        }}
+        title="창고 삭제"
+        description="이 창고를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        variant="destructive"
+        confirmLabel="삭제"
+      />
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -216,8 +293,9 @@ export function WarehousesPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {!editingWarehouse && (
                 <div>
-                  <label className="block text-sm font-medium mb-1">소속 센터 *</label>
+                  <label htmlFor="warehouse-center" className="block text-sm font-medium mb-1">소속 센터 *</label>
                   <select
+                    id="warehouse-center"
                     value={formData.centerId}
                     onChange={(e) => setFormData({ ...formData, centerId: e.target.value })}
                     className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
@@ -233,8 +311,9 @@ export function WarehousesPage() {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium mb-1">창고 코드 *</label>
+                <label htmlFor="warehouse-code" className="block text-sm font-medium mb-1">창고 코드 *</label>
                 <input
+                  id="warehouse-code"
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
@@ -244,8 +323,9 @@ export function WarehousesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">창고명 *</label>
+                <label htmlFor="warehouse-name" className="block text-sm font-medium mb-1">창고명 *</label>
                 <input
+                  id="warehouse-name"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -254,8 +334,9 @@ export function WarehousesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">주소</label>
+                <label htmlFor="warehouse-address" className="block text-sm font-medium mb-1">주소</label>
                 <input
+                  id="warehouse-address"
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -263,8 +344,9 @@ export function WarehousesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">연락처</label>
+                <label htmlFor="warehouse-phone" className="block text-sm font-medium mb-1">연락처</label>
                 <input
+                  id="warehouse-phone"
                   type="text"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}

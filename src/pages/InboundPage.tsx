@@ -6,9 +6,9 @@
  * @since 1.0
  */
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Plus, Eye, Check, Package, ScanBarcode, Download, Upload } from 'lucide-react'
+import { Plus, Eye, Check, Package, ScanBarcode, Download, Upload, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useInbounds, useInboundItems, useCreateInbound, useAddInboundItem, useConfirmInbound } from '@/hooks/useInbound'
 import { useProducts } from '@/hooks/useProduct'
 import { useLocations } from '@/hooks/useLocation'
@@ -33,8 +33,17 @@ export function InboundPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [showExcelModal, setShowExcelModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const pageSize = 10
 
   const { data: inbounds, isLoading, error } = useInbounds(statusFilter || undefined)
+
+  const paginatedInbounds = useMemo(() => {
+    const start = currentPage * pageSize
+    return (inbounds ?? []).slice(start, start + pageSize)
+  }, [inbounds, currentPage])
+
+  const totalPages = Math.ceil((inbounds?.length ?? 0) / pageSize)
 
   if (isLoading) {
     return <EmptyState title="로딩 중..." description="입고 데이터를 불러오는 중입니다" variant="empty" />
@@ -58,6 +67,7 @@ export function InboundPage() {
         <h1 className="text-2xl font-bold text-neutral-900">입고 관리</h1>
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => void downloadExcelTemplate('inbounds')}
             className="flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-neutral-700 hover:bg-neutral-50 transition-colors"
           >
@@ -65,6 +75,7 @@ export function InboundPage() {
             템플릿 다운로드
           </button>
           <button
+            type="button"
             onClick={() => setShowExcelModal(true)}
             className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2 text-primary-700 hover:bg-primary-100 transition-colors"
           >
@@ -72,6 +83,7 @@ export function InboundPage() {
             엑셀 업로드
           </button>
           <button
+            type="button"
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
@@ -108,7 +120,7 @@ export function InboundPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-neutral-200">
-              {inbounds.map((inbound) => (
+              {paginatedInbounds.map((inbound) => (
                 <tr key={inbound.id} className="hover:bg-neutral-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{inbound.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.inboundDate}</td>
@@ -125,55 +137,104 @@ export function InboundPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.totalQuantity}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedInbound(inbound)
-                          setShowDetailModal(true)
-                        }}
-                        className="text-primary-600 hover:text-primary-700"
-                        title="View Details"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
-                      {inbound.status === 'DRAFT' && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setSelectedInbound(inbound)
-                              setShowAddItemModal(true)
-                            }}
-                            className="text-primary-600 hover:text-primary-700"
-                            title="Add Item"
-                          >
-                            <Package className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedInbound(inbound)
-                              setShowDetailModal(true)
-                            }}
-                            className="text-success hover:text-green-700"
-                            title="Confirm"
-                          >
-                            <Check className="w-5 h-5" />
-                          </button>
+<button
+                         type="button"
+                         onClick={() => {
+                           setSelectedInbound(inbound)
+                           setShowDetailModal(true)
+                         }}
+                         className="text-primary-600 hover:text-primary-700"
+                         title="View Details"
+                       >
+                         <Eye className="w-5 h-5" />
+                       </button>
+                       {inbound.status === 'DRAFT' && (
+                         <>
+                           <button
+                             type="button"
+                             onClick={() => {
+                               setSelectedInbound(inbound)
+                               setShowAddItemModal(true)
+                             }}
+                             className="text-primary-600 hover:text-primary-700"
+                             title="Add Item"
+                           >
+                             <Package className="w-5 h-5" />
+                           </button>
+                           <button
+                             type="button"
+                             onClick={() => {
+                               setSelectedInbound(inbound)
+                               setShowDetailModal(true)
+                             }}
+                             className="text-success hover:text-green-700"
+                             title="Confirm"
+                           >
+                             <Check className="w-5 h-5" />
+                           </button>
                         </>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <EmptyState
-            title="No inbounds found"
-            description="Create your first inbound to get started"
-            actionLabel="New Inbound"
-            onAction={() => setShowCreateModal(true)}
-          />
-        )}
-      </div>
+))}
+             </tbody>
+           </table>
+         ) : (
+           <EmptyState
+             title="No inbounds found"
+             description="Create your first inbound to get started"
+             actionLabel="New Inbound"
+             onAction={() => setShowCreateModal(true)}
+           />
+         )}
+       </div>
+
+       {totalPages > 1 && (
+        <div className="flex items-center justify-between px-6 py-3 border-t border-neutral-200">
+          <div className="text-sm text-neutral-500">
+            총 {(inbounds ?? []).length}개 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, (inbounds ?? []).length)}개 표시
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = currentPage < 3 ? i : currentPage - 2 + i
+                if (pageNum >= totalPages) return null
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-1 rounded transition-colors ${
+                      currentPage === pageNum
+                        ? 'bg-primary-600 text-white'
+                        : 'hover:bg-neutral-100'
+                    }`}
+                  >
+                    {pageNum + 1}
+                  </button>
+                )
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              disabled={currentPage === totalPages - 1}
+              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {showCreateModal && (
         <CreateInboundModal onClose={() => setShowCreateModal(false)} />
@@ -308,7 +369,7 @@ function InboundDetailModal({ inbound, onClose }: { inbound: Inbound; onClose: (
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-neutral-900">Inbound #{inbound.id}</h2>
-          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-700">
+          <button onClick={onClose} type="button" className="text-neutral-500 hover:text-neutral-700">
             &times;
           </button>
         </div>
@@ -371,6 +432,7 @@ function InboundDetailModal({ inbound, onClose }: { inbound: Inbound; onClose: (
         <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onClose}
+            type="button"
             className="px-4 py-2 text-neutral-600 hover:text-neutral-700"
           >
             Close
@@ -378,6 +440,7 @@ function InboundDetailModal({ inbound, onClose }: { inbound: Inbound; onClose: (
           {inbound.status === 'DRAFT' && items && items.length > 0 && (
             <button
               onClick={handleConfirm}
+              type="button"
               disabled={confirmMutation.isPending}
               className="px-4 py-2 bg-success text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >

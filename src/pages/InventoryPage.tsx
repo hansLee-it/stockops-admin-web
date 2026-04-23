@@ -235,6 +235,7 @@ export function InventoryPage() {
                 </div>
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                     disabled={currentPage === 0}
                     className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -246,10 +247,11 @@ export function InventoryPage() {
                       const pageNum = currentPage < 3 ? i : currentPage - 2 + i
                       if (pageNum >= totalPages) return null
                       return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`px-3 py-1 rounded transition-colors ${
+<button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-1 rounded transition-colors ${
                             currentPage === pageNum
                               ? 'bg-primary-600 text-white'
                               : 'hover:bg-neutral-100'
@@ -261,6 +263,7 @@ export function InventoryPage() {
                     })}
                   </div>
                   <button
+                    type="button"
                     onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
                     disabled={currentPage === totalPages - 1}
                     className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

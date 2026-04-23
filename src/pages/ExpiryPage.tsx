@@ -120,6 +120,7 @@ export function ExpiryPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {summaryCards.map((card) => (
           <button
+            type="button"
             key={card.key}
             onClick={() => setSelectedLevel(selectedLevel === card.key.toUpperCase() as AlertLevel ? 'ALL' : card.key.toUpperCase() as AlertLevel)}
             className={`bg-white p-6 rounded-lg shadow text-left transition-all ${
@@ -152,6 +153,7 @@ export function ExpiryPage() {
           </label>
           {selectedLevel !== 'ALL' && (
             <button
+              type="button"
               onClick={() => setSelectedLevel('ALL')}
               className="text-sm text-primary-600 hover:text-primary-700"
             >
@@ -237,6 +239,7 @@ export function ExpiryPage() {
                       <td className="px-4 py-3">
                         {!alert.acknowledged && (
                           <button
+                            type="button"
                             onClick={() => handleAcknowledge(alert.id)}
                             disabled={acknowledgeMutation.isPending}
                             className="text-sm text-primary-600 hover:text-primary-700 disabled:opacity-50"

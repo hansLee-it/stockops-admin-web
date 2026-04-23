@@ -50,7 +50,7 @@ export function LocationsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-neutral-900">Locations</h1>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors">
+          <button type="button" className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors">
             <MapPin className="w-4 h-4" />
             Add Location
           </button>
@@ -162,6 +162,7 @@ export function LocationsPage() {
                 </div>
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                     disabled={currentPage === 0}
                     className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -173,9 +174,10 @@ export function LocationsPage() {
                       const pageNum = currentPage < 3 ? i : currentPage - 2 + i
                       if (pageNum >= totalPages) return null
                       return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
+<button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => setCurrentPage(pageNum)}
                           className={`px-3 py-1 rounded transition-colors ${
                             currentPage === pageNum
                               ? 'bg-primary-600 text-white'
@@ -188,6 +190,7 @@ export function LocationsPage() {
                     })}
                   </div>
                   <button
+                    type="button"
                     onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
                     disabled={currentPage === totalPages - 1}
                     className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

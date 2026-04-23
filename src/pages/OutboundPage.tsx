@@ -6,13 +6,14 @@
  * @since 1.0
  */
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Eye, CheckCircle, X, Package, ScanBarcode } from 'lucide-react'
+import { Plus, Eye, CheckCircle, X, Package, ScanBarcode, ChevronLeft, ChevronRight } from 'lucide-react'
 import api from '@/lib/api'
 import type { OutboundDTO, OutboundItemDTO, OutboundStatus, CreateOutboundRequest, AddOutboundItemRequest } from '@/types/outbound'
 import type { ProductDTO } from '@/types/product'
 import { EmptyState } from '@/components/common/EmptyState'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { BarcodeScanner } from '@/components/common/BarcodeScanner'
 
 /**
@@ -25,6 +26,9 @@ export function OutboundPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedOutbound, setSelectedOutbound] = useState<OutboundDTO | null>(null)
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; id: number | null }>({ open: false, id: null })
+  const [currentPage, setCurrentPage] = useState(0)
+  const pageSize = 10
   const queryClient = useQueryClient()
 
   const { data: outbounds = [], isLoading } = useQuery({
@@ -35,6 +39,13 @@ export function OutboundPage() {
       return response.data
     },
   })
+
+  const paginatedOutbounds = useMemo(() => {
+    const start = currentPage * pageSize
+    return outbounds.slice(start, start + pageSize)
+  }, [outbounds, currentPage])
+
+  const totalPages = Math.ceil(outbounds.length / pageSize)
 
   const confirmMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -47,9 +58,14 @@ export function OutboundPage() {
   })
 
   const handleConfirm = (id: number) => {
-    if (window.confirm('출고를 확정하시겠습니까? FEFO 방식으로 LOT이 할당되고 재고가 차감됩니다.')) {
-      confirmMutation.mutate(id)
+    setConfirmDialog({ open: true, id })
+  }
+
+  const executeConfirm = async () => {
+    if (confirmDialog.id !== null) {
+      confirmMutation.mutate(confirmDialog.id)
     }
+    setConfirmDialog({ open: false, id: null })
   }
 
   const handleViewDetails = (outbound: OutboundDTO) => {
@@ -61,13 +77,14 @@ export function OutboundPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-neutral-900">출고 관리</h1>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          신규 출고 등록
-        </button>
+<button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            신규 출고 등록
+          </button>
       </div>
 
       <div className="mb-4">
@@ -97,20 +114,21 @@ export function OutboundPage() {
           onAction={() => setIsCreateModalOpen(true)}
         />
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="min-w-full divide-y divide-neutral-200">
-            <thead className="bg-neutral-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">일자</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">고객</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">상태</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">총 수량</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">작업</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-neutral-200">
-              {outbounds.map((outbound) => (
+        <>
+          <div className="bg-white rounded-lg shadow overflow-x-auto">
+            <table className="min-w-full divide-y divide-neutral-200">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">일자</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">고객</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">상태</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">총 수량</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">작업</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-neutral-200">
+                {paginatedOutbounds.map((outbound) => (
                 <tr key={outbound.id} className="hover:bg-neutral-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.outboundDate}</td>
@@ -127,7 +145,8 @@ export function OutboundPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{outbound.totalQuantity}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex gap-2">
-                      <button
+<button
+                        type="button"
                         onClick={() => handleViewDetails(outbound)}
                         className="text-primary-600 hover:text-primary-800"
                         title="View Details"
@@ -136,13 +155,14 @@ export function OutboundPage() {
                       </button>
                       {outbound.status === 'DRAFT' && (
                         <button
+                          type="button"
                           onClick={() => handleConfirm(outbound.id)}
                           className="text-green-600 hover:text-green-800"
                           title="Confirm"
                           disabled={confirmMutation.isPending}
                         >
                           <CheckCircle className="w-4 h-4" />
-                          </button>
+                        </button>
                         )}
                       </div>
                     </td>
@@ -151,7 +171,63 @@ export function OutboundPage() {
               </tbody>
             </table>
           </div>
-        )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-3 border-t border-neutral-200">
+              <div className="text-sm text-neutral-500">
+                총 {outbounds.length}개 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, outbounds.length)}개 표시
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
+                  className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = currentPage < 3 ? i : currentPage - 2 + i
+                    if (pageNum >= totalPages) return null
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1 rounded transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-primary-600 text-white'
+                            : 'hover:bg-neutral-100'
+                        }`}
+                      >
+                        {pageNum + 1}
+                      </button>
+                    )
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                  disabled={currentPage === totalPages - 1}
+                  className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({ open: false, id: null })}
+        onConfirm={() => void executeConfirm()}
+        title="출고 확정"
+        description="출고를 확정하시겠습니까? FEFO 방식으로 LOT이 할당되고 재고가 차감됩니다."
+        confirmLabel="확정"
+      />
 
       {isCreateModalOpen && (
         <CreateOutboundModal
@@ -289,7 +365,7 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
       <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-neutral-900">신규 출고 등록</h2>
-          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-700">
+          <button onClick={onClose} type="button" className="text-neutral-500 hover:text-neutral-700">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -405,6 +481,7 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
             </div>
 
             <button
+              type="button"
               onClick={handleAddItem}
               disabled={addItemMutation.isPending}
               className="w-full mb-4 px-4 py-2 bg-neutral-100 text-neutral-900 rounded hover:bg-neutral-200 disabled:opacity-50 transition-colors"
@@ -428,12 +505,14 @@ function CreateOutboundModal({ onClose, onSuccess }: { onClose: () => void; onSu
             <div className="flex justify-end gap-2">
               <button
                 onClick={onClose}
+                type="button"
                 className="px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleFinish}
+                type="button"
                 className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
               >
                 Finish
@@ -466,7 +545,7 @@ function OutboundDetailModal({ outbound, onClose }: { outbound: OutboundDTO; onC
       <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-neutral-900">Outbound #{outbound.id} Details</h2>
-          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-700">
+          <button onClick={onClose} type="button" className="text-neutral-500 hover:text-neutral-700">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -538,6 +617,7 @@ function OutboundDetailModal({ outbound, onClose }: { outbound: OutboundDTO; onC
         <div className="flex justify-end">
           <button
             onClick={onClose}
+            type="button"
             className="px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
           >
             Close

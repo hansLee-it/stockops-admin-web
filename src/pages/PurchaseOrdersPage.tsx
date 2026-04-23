@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ComponentType, FormEvent } from 'react'
 import api from '@/lib/api'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import { CheckCircle2, Clock3, Download, Eye, PackageCheck, Plus, Send, Truck, Upload, X, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock3, Download, Eye, PackageCheck, Plus, Send, Truck, Upload, X, XCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { downloadExcelTemplate } from '@/api/excel'
 import { ExcelUploadModal } from '@/components/common/ExcelUploadModal'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -304,12 +304,21 @@ export function PurchaseOrdersPage() {
   const [detailTab, setDetailTab] = useState<DetailTab>('details')
   const [isDetailLoading, setIsDetailLoading] = useState(false)
   const [transitioningPoId, setTransitioningPoId] = useState<number | null>(null)
+  const [currentPage, setCurrentPage] = useState(0)
+  const pageSize = 10
   const [formData, setFormData] = useState({
     centerId: '',
     warehouseId: '',
   })
 
   const historyEvents = useMemo(() => buildHistoryEvents(selectedPO), [selectedPO])
+
+  const paginatedPurchaseOrders = useMemo(() => {
+    const start = currentPage * pageSize
+    return purchaseOrders.slice(start, start + pageSize)
+  }, [purchaseOrders, currentPage])
+
+  const totalPages = Math.ceil(purchaseOrders.length / pageSize)
 
   useEffect(() => {
     void fetchCenters()
@@ -559,7 +568,7 @@ export function PurchaseOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
-              {purchaseOrders.map((po) => (
+              {paginatedPurchaseOrders.map((po) => (
                 <tr key={po.id} className="hover:bg-neutral-50">
                   <td className="px-6 py-4 font-mono text-sm">{po.poNumber}</td>
                   <td className="px-6 py-4 text-sm">{po.requestingCenter?.name || '-'}</td>
@@ -574,6 +583,7 @@ export function PurchaseOrdersPage() {
                     <div className="flex items-start justify-end gap-2">
                       <button
                         onClick={() => void handleOpenDetail(po)}
+                        type="button"
                         className="rounded-lg p-2 text-text-secondary hover:bg-neutral-100"
                         title="상세 보기"
                       >
@@ -588,6 +598,52 @@ export function PurchaseOrdersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-6 py-3">
+          <div className="text-sm text-text-secondary">
+            총 {purchaseOrders.length}개 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, purchaseOrders.length)}개 표시
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = currentPage < 3 ? i : currentPage - 2 + i
+                if (pageNum >= totalPages) return null
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-1 rounded transition-colors ${
+                      currentPage === pageNum
+                        ? 'bg-primary-600 text-white'
+                        : 'hover:bg-neutral-100'
+                    }`}
+                  >
+                    {pageNum + 1}
+                  </button>
+                )
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              disabled={currentPage === totalPages - 1}
+              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -655,7 +711,7 @@ export function PurchaseOrdersPage() {
                 <h2 className="text-xl font-bold">발주 상세</h2>
                 <p className="mt-1 text-sm text-text-secondary">상태 전환과 이력을 함께 확인할 수 있습니다.</p>
               </div>
-              <button onClick={() => setSelectedPO(null)} className="rounded-lg p-2 hover:bg-neutral-100">
+              <button onClick={() => setSelectedPO(null)} type="button" className="rounded-lg p-2 hover:bg-neutral-100">
                 <X className="w-5 h-5" />
               </button>
             </div>

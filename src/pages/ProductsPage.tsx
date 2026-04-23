@@ -11,6 +11,7 @@ import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Download, Upload
 import { downloadExcelTemplate } from '@/api/excel'
 import { ExcelUploadModal } from '@/components/common/ExcelUploadModal'
 import { ProductModal } from '@/components/products/ProductModal'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import type { ProductDTO, CreateProductRequest, UpdateProductRequest } from '@/types/product'
 import { getProducts, createProduct, updateProduct, deleteProduct } from '@/api/products'
 
@@ -25,6 +26,7 @@ export function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(0)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({ open: false, id: null })
   const pageSize = 10
 
   useEffect(() => {
@@ -98,14 +100,14 @@ export function ProductsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('정말로 이 상품을 삭제하시겠습니까?')) return
-
     try {
       await deleteProduct(id)
       await fetchProducts()
     } catch (err) {
       console.error('Failed to delete product:', err)
       setError('상품 삭제에 실패했습니다.')
+    } finally {
+      setDeleteConfirm({ open: false, id: null })
     }
   }
 
@@ -133,6 +135,7 @@ export function ProductsPage() {
         <h1 className="text-2xl font-bold text-neutral-900">상품 관리</h1>
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => void downloadExcelTemplate('products')}
             className="flex items-center gap-2 px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors"
           >
@@ -140,6 +143,7 @@ export function ProductsPage() {
             템플릿 다운로드
           </button>
           <button
+            type="button"
             onClick={() => setShowExcelModal(true)}
             className="flex items-center gap-2 px-4 py-2 border border-primary-200 text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
           >
@@ -147,6 +151,7 @@ export function ProductsPage() {
             엑셀 업로드
           </button>
           <button
+            type="button"
             onClick={handleOpenCreate}
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
@@ -270,6 +275,7 @@ export function ProductsPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <button
+                            type="button"
                             onClick={() => handleEdit(product)}
                             className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-600 transition-colors"
                             title="수정"
@@ -277,7 +283,8 @@ export function ProductsPage() {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(product.id)}
+                            type="button"
+                            onClick={() => setDeleteConfirm({ open: true, id: product.id })}
                             className="p-2 hover:bg-error/10 rounded-lg text-error transition-colors"
                             title="삭제"
                           >
@@ -300,6 +307,7 @@ export function ProductsPage() {
                 </div>
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                     disabled={currentPage === 0}
                     className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -311,9 +319,10 @@ export function ProductsPage() {
                       const pageNum = currentPage < 3 ? i : currentPage - 2 + i
                       if (pageNum >= totalPages) return null
                       return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
+<button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => setCurrentPage(pageNum)}
                           className={`px-3 py-1 rounded transition-colors ${
                             currentPage === pageNum
                               ? 'bg-primary-600 text-white'
@@ -326,6 +335,7 @@ export function ProductsPage() {
                     })}
                   </div>
                   <button
+                    type="button"
                     onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
                     disabled={currentPage === totalPages - 1}
                     className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -352,6 +362,20 @@ export function ProductsPage() {
         entityLabel="상품"
         onClose={() => setShowExcelModal(false)}
         onImported={fetchProducts}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, id: null })}
+        onConfirm={() => {
+          if (deleteConfirm.id !== null) {
+            void handleDelete(deleteConfirm.id)
+          }
+        }}
+        title="상품 삭제"
+        description="정말로 이 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        variant="destructive"
+        confirmLabel="삭제"
       />
     </div>
   )

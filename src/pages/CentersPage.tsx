@@ -1,14 +1,16 @@
 /**
  * Centers management page.
- * Provides CRUD operations for centers.
+ * Provides CRUD operations for centers with pagination, error handling, and accessible confirmations.
  *
  * @author StockOps Team
  * @since 2.0
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import api from '@/lib/api'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { EmptyState } from '@/components/common/EmptyState'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 
 interface Center {
   id: number
@@ -22,8 +24,12 @@ interface Center {
 export function CentersPage() {
   const [centers, setCenters] = useState<Center[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [editingCenter, setEditingCenter] = useState<Center | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({ open: false, id: null })
+  const [currentPage, setCurrentPage] = useState(0)
+  const pageSize = 10
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -37,10 +43,13 @@ export function CentersPage() {
 
   const fetchCenters = async () => {
     try {
+      setLoading(true)
+      setError(null)
       const response = await api.get('/v1/centers')
       setCenters(response.data)
-    } catch (error) {
-      console.error('Failed to fetch centers:', error)
+    } catch (err) {
+      console.error('Failed to fetch centers:', err)
+      setError('센터 데이터를 불러오지 못했습니다.')
     } finally {
       setLoading(false)
     }
@@ -75,20 +84,29 @@ export function CentersPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('이 센터를 삭제하시겠습니까?')) return
     try {
       await api.delete(`/v1/centers/${id}`)
       fetchCenters()
     } catch (error) {
       console.error('Failed to delete center:', error)
+    } finally {
+      setDeleteConfirm({ open: false, id: null })
     }
   }
+
+  const paginatedCenters = useMemo(() => {
+    const start = currentPage * pageSize
+    return centers.slice(start, start + pageSize)
+  }, [centers, currentPage])
+
+  const totalPages = Math.ceil(centers.length / pageSize)
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">센터 관리</h1>
         <button
+          type="button"
           onClick={() => {
             setEditingCenter(null)
             setFormData({ code: '', name: '', address: '', phone: '' })
@@ -102,61 +120,141 @@ export function CentersPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-text-secondary">로딩 중...</div>
+        <EmptyState
+          title="로딩 중..."
+          description="센터 데이터를 불러오는 중입니다"
+          variant="empty"
+        />
+      ) : error ? (
+        <EmptyState
+          title="데이터 로딩 실패"
+          description={error}
+          variant="error"
+          actionLabel="다시 시도"
+          onAction={() => fetchCenters()}
+        />
+      ) : centers.length === 0 ? (
+        <EmptyState
+          title="등록된 센터가 없습니다"
+          description="첫 번째 센터를 추가해보세요"
+          actionLabel="센터 추가"
+          onAction={() => {
+            setEditingCenter(null)
+            setFormData({ code: '', name: '', address: '', phone: '' })
+            setShowModal(true)
+          }}
+        />
       ) : (
-        <div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">코드</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">센터명</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">주소</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">상태</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase">작업</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-200">
-              {centers.map((center) => (
-                <tr key={center.id} className="hover:bg-neutral-50">
-                  <td className="px-6 py-4 font-mono text-sm">{center.code}</td>
-                  <td className="px-6 py-4 font-medium">{center.name}</td>
-                  <td className="px-6 py-4 text-sm text-text-secondary">{center.address || '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      center.status === 'ACTIVE' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-neutral-100 text-neutral-600'
-                    }`}>
-                      {center.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => handleEdit(center)}
-                      className="p-2 hover:bg-neutral-100 rounded-lg text-text-secondary"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(center.id)}
-                      className="p-2 hover:bg-red-50 rounded-lg text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {centers.length === 0 && (
+        <>
+          <div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-text-secondary">
-                    등록된 센터가 없습니다.
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">코드</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">센터명</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">주소</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">상태</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase">작업</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-neutral-200">
+                {paginatedCenters.map((center) => (
+                  <tr key={center.id} className="hover:bg-neutral-50">
+                    <td className="px-6 py-4 font-mono text-sm">{center.code}</td>
+                    <td className="px-6 py-4 font-medium">{center.name}</td>
+                    <td className="px-6 py-4 text-sm text-text-secondary">{center.address || '-'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        center.status === 'ACTIVE'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-neutral-100 text-neutral-600'
+                      }`}>
+                        {center.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(center)}
+                        className="p-2 hover:bg-neutral-100 rounded-lg text-text-secondary"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirm({ open: true, id: center.id })}
+                        className="p-2 hover:bg-red-50 rounded-lg text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-3">
+              <div className="text-sm text-text-secondary">
+                총 {centers.length}개 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, centers.length)}개 표시
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
+                  className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = currentPage < 3 ? i : currentPage - 2 + i
+                    if (pageNum >= totalPages) return null
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1 rounded transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-primary-600 text-white'
+                            : 'hover:bg-neutral-100'
+                        }`}
+                      >
+                        {pageNum + 1}
+                      </button>
+                    )
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                  disabled={currentPage === totalPages - 1}
+                  className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, id: null })}
+        onConfirm={() => {
+          if (deleteConfirm.id !== null) {
+            void handleDelete(deleteConfirm.id)
+          }
+        }}
+        title="센터 삭제"
+        description="이 센터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        variant="destructive"
+        confirmLabel="삭제"
+      />
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -166,8 +264,9 @@ export function CentersPage() {
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">센터 코드 *</label>
-               <input
+                <label htmlFor="center-code" className="block text-sm font-medium mb-1">센터 코드 *</label>
+                <input
+                  id="center-code"
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
@@ -180,8 +279,9 @@ export function CentersPage() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">센터명 *</label>
+                <label htmlFor="center-name" className="block text-sm font-medium mb-1">센터명 *</label>
                 <input
+                  id="center-name"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -190,8 +290,9 @@ export function CentersPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">주소</label>
+                <label htmlFor="center-address" className="block text-sm font-medium mb-1">주소</label>
                 <input
+                  id="center-address"
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -199,8 +300,9 @@ export function CentersPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">연락처</label>
+                <label htmlFor="center-phone" className="block text-sm font-medium mb-1">연락처</label>
                 <input
+                  id="center-phone"
                   type="text"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
