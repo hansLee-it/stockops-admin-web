@@ -18,7 +18,7 @@ import {
   MapPin, LogOut, Clock, Settings,
   Building2, Warehouse, Menu, X,
   Thermometer, BarChart3, Brain,
-  Shield, Bell, FileText, TrendingUp
+  Shield, Bell, FileText, TrendingUp, SlidersHorizontal, ClipboardList
 } from 'lucide-react'
 
 interface NavItem {
@@ -34,11 +34,14 @@ const navItems: NavItem[] = [
   { to: '/warehouses', label: '창고 관리', icon: Warehouse },
   { to: '/products', label: '상품 관리', icon: Package },
   { to: '/inventory', label: '재고 관리', icon: Package },
+  { to: '/stock-adjustments', label: '재고 조정', icon: SlidersHorizontal },
+  { to: '/cycle-counts', label: '재고 실사', icon: ClipboardList },
   { to: '/inbound', label: '입고 관리', icon: ArrowDownToLine },
   { to: '/outbound', label: '출고 관리', icon: ArrowUpFromLine },
   { to: '/locations', label: '위치 관리', icon: MapPin },
   { to: '/purchase-orders', label: '발주 관리', icon: Package },
   { to: '/expiry', label: '유통기한', icon: Clock },
+  { to: '/notifications', label: '알림 센터', icon: Bell },
   { to: '/reports', label: '리포트', icon: BarChart3 },
   { to: '/ai', label: 'AI 발주 추천', icon: Brain },
   { to: '/settings', label: '설정', icon: Settings },

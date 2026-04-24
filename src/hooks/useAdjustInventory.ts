@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import api from '@/lib/api'
+import type { StockAdjustment, ApproveAdjustmentRequest } from '@/types/stockAdjustment'
 
 /**
  * Reason code option for stock adjustments.
@@ -97,6 +98,53 @@ export function useAdjustInventory(): UseMutationResult<
       return response.data
     },
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    },
+  })
+}
+
+/**
+ * Fetches pending stock adjustments awaiting approval.
+ *
+ * @returns React Query result with pending adjustment array
+ * @example
+ * const { data: pendingAdjustments, isLoading } = usePendingAdjustments()
+ */
+export function usePendingAdjustments(): UseQueryResult<StockAdjustment[], AxiosError> {
+  return useQuery({
+    queryKey: ['inventory-adjustments', 'pending'],
+    queryFn: async () => {
+      const response = await api.get<StockAdjustment[]>('/v1/inventory/adjustments/pending')
+      return response.data
+    },
+  })
+}
+
+/**
+ * Approves or rejects a pending stock adjustment.
+ *
+ * @returns React Query mutation for approving/rejecting adjustments
+ * @example
+ * const approveMutation = useApproveAdjustment()
+ * await approveMutation.mutateAsync({ adjustmentId: 1, approved: true })
+ */
+export function useApproveAdjustment(): UseMutationResult<
+  StockAdjustment,
+  AxiosError,
+  ApproveAdjustmentRequest
+> {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (request: ApproveAdjustmentRequest) => {
+      const response = await api.post<StockAdjustment>(
+        `/v1/inventory/adjustments/${request.adjustmentId}/approve`,
+        request
+      )
+      return response.data
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['inventory-adjustments'] })
       await queryClient.invalidateQueries({ queryKey: ['inventory'] })
     },
   })

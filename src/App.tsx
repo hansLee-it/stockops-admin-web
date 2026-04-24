@@ -22,10 +22,13 @@ import { ProductsPage } from '@/pages/ProductsPage'
 import { EnvironmentPage } from '@/pages/EnvironmentPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { AIFeaturesPage } from '@/pages/AIFeaturesPage'
+import { StockAdjustmentPage } from '@/pages/StockAdjustmentPage'
 import { AdminPage } from '@/pages/admin/AdminPage'
 import { NoticeManagement } from '@/pages/admin/NoticeManagement'
 import { AuditLogViewer } from '@/pages/admin/AuditLogViewer'
 import { DemandForecastPage } from '@/pages/DemandForecastPage'
+import { CycleCountPage } from '@/pages/CycleCountPage'
+import { NotificationsPage } from '@/pages/NotificationsPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -66,6 +69,7 @@ function App() {
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="inbound" element={<InboundPage />} />
           <Route path="outbound" element={<OutboundPage />} />
+          <Route path="stock-adjustments" element={<StockAdjustmentPage />} />
           <Route path="locations" element={<LocationsPage />} />
           <Route path="expiry" element={<ExpiryPage />} />
           <Route path="settings" element={<SettingsPage />} />
@@ -76,6 +80,8 @@ function App() {
           <Route path="admin/notices" element={<NoticeManagement />} />
           <Route path="admin/audit-logs" element={<AuditLogViewer />} />
           <Route path="demand-forecast" element={<DemandForecastPage />} />
+          <Route path="cycle-counts" element={<CycleCountPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
