@@ -28,7 +28,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
 }
 
-const navItems: NavItem[] = [
+const allNavItems: NavItem[] = [
   { to: '/dashboard', label: '대시보드', icon: LayoutDashboard },
   { to: '/environment', label: '환경 모니터링', icon: Thermometer },
   { to: '/centers', label: '센터 관리', icon: Building2 },
@@ -48,6 +48,27 @@ const navItems: NavItem[] = [
   { to: '/ai', label: 'AI 발주 추천', icon: Brain },
   { to: '/settings', label: '설정', icon: Settings },
 ]
+
+/**
+ * Returns navigation items visible to the given user role.
+ *
+ * @param role - User role string (e.g., 'ADMIN', 'MANAGER', 'OPERATOR')
+ * @returns Filtered array of navigation items for the role
+ */
+function getNavItemsForRole(role: string | undefined): NavItem[] {
+  switch (role) {
+    case 'ADMIN':
+      return allNavItems
+    case 'MANAGER':
+      return allNavItems.filter(item => !['/settings', '/ai'].includes(item.to))
+    case 'OPERATOR':
+      return allNavItems.filter(item =>
+        !['/settings', '/ai', '/centers', '/warehouses', '/products', '/reports'].includes(item.to)
+      )
+    default:
+      return allNavItems
+  }
+}
 
 /**
  * Main layout with always-hamburger responsive sidebar.
@@ -145,7 +166,7 @@ export function MainLayout() {
   }, [location.pathname])
 
   const getPageTitle = () => {
-    const item = navItems.find(item => item.to === location.pathname)
+    const item = allNavItems.find(item => item.to === location.pathname)
     return item?.label || 'StockOps'
   }
 
@@ -196,7 +217,7 @@ export function MainLayout() {
         </div>
 
         <nav className="flex-1 p-4 overflow-y-auto">
-          {navItems.map((item) => {
+          {getNavItemsForRole(user?.role).map((item) => {
             const isActive = location.pathname === item.to
             return (
               <Link
