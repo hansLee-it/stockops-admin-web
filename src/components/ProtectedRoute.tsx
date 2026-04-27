@@ -6,7 +6,7 @@
  * @since 1.0
  */
 
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useEffect, useState } from 'react'
 
@@ -28,6 +28,8 @@ interface ProtectedRouteProps {
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const user = useAuthStore((state) => state.user)
+  const location = useLocation()
   const [isRehydrated, setIsRehydrated] = useState(false)
 
   // Wait for Zustand persist to rehydrate from localStorage
@@ -51,6 +53,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />
+  }
+
+  const adminPaths = ['/admin', '/admin/notices', '/admin/audit-logs']
+  if (adminPaths.some((path) => location.pathname === path) && user?.role !== 'ADMIN') {
+    return <Navigate to="/dashboard" replace />
   }
 
   return <>{children}</>

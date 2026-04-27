@@ -185,23 +185,23 @@ export function WarehousesPage() {
 
       {loading ? (
         <EmptyState
-          title="Loading..."
-          description="Fetching warehouse data"
+          title="로딩 중..."
+          description="창고 데이터를 불러오는 중입니다"
           variant="empty"
         />
       ) : error ? (
         <EmptyState
-          title="Failed to load data"
+          title="데이터 로딩 실패"
           description={error}
           variant="error"
-          actionLabel="Retry"
+          actionLabel="다시 시도"
           onAction={() => fetchWarehouses()}
         />
       ) : warehouses.length === 0 ? (
         <EmptyState
-          title="No warehouses found"
-          description="Add your first warehouse to get started"
-          actionLabel="Add Warehouse"
+          title="창고가 없습니다"
+          description="첫 번째 창고를 등록하여 시작하세요"
+          actionLabel="새 창고"
           onAction={() => {
             setEditingWarehouse(null)
             setFormData({ code: '', name: '', address: '', phone: '', centerId: '' })
