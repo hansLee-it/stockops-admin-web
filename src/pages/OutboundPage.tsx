@@ -80,7 +80,7 @@ export function OutboundPage() {
         <button
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-primary-600 text-white px-4 py-2 min-h-[44px] rounded hover:bg-primary-700 transition-colors"
+          className="flex items-center justify-center gap-2 bg-primary-600 text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
           신규 출고 등록
@@ -92,7 +92,7 @@ export function OutboundPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as OutboundStatus | '')}
-          className="w-full sm:w-auto p-2 min-h-[44px] text-base border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full sm:w-auto p-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           <option value="">전체</option>
           <option value="DRAFT">임시저장</option>
@@ -137,8 +137,8 @@ export function OutboundPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded ${
                           outbound.status === 'CONFIRMED'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-success/10 text-success'
+                            : 'bg-warning/10 text-warning'
                         }`}>
                           {outbound.status}
                         </span>
@@ -180,8 +180,8 @@ export function OutboundPage() {
                     <span className="text-sm font-medium text-neutral-500">#{outbound.id}</span>
                     <span className={`px-2 py-1 text-xs font-medium rounded ${
                       outbound.status === 'CONFIRMED'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
+                        ? 'bg-success/10 text-success'
+                        : 'bg-warning/10 text-warning'
                     }`}>
                       {outbound.status}
                     </span>
@@ -618,8 +618,8 @@ function OutboundDetailModal({ outbound, onClose }: { outbound: OutboundDTO; onC
             <p>
               <span className={`px-2 py-1 text-xs font-medium rounded ${
                 outbound.status === 'CONFIRMED' 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-yellow-100 text-yellow-800'
+                  ? 'bg-success/10 text-success' 
+                  : 'bg-warning/10 text-warning'
               }`}>
                 {outbound.status}
               </span>

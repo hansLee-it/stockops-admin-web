@@ -21,8 +21,7 @@ export function DemandForecastPage() {
     try {
       const res = await api.get(`/demand-forecast?productId=${productId}&days=${days}`)
       setForecasts(res.data)
-    } catch (e) {
-      console.error(e)
+    } catch {
     } finally {
       setLoading(false)
     }

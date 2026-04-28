@@ -1295,7 +1295,7 @@ function ConnectionStatusDot({ status }: { status: ConnectionStatus }) {
     connected: '실시간 연결 중',
     connecting: '연결 시도 중',
     disconnected: '연결 끊김',
-    fallback: '폴� 모드',
+    fallback: '폴백 모드',
   }
   return (
     <div className="flex items-center gap-1.5">

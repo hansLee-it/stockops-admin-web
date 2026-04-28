@@ -14,7 +14,7 @@ interface NoticeDTO {
 
 export function NoticeManagement() {
   const [notices, setNotices] = useState<NoticeDTO[]>([])
-  const [_loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
   const [formData, setFormData] = useState({ title: '', content: '', type: 'SYSTEM' })
@@ -25,8 +25,7 @@ export function NoticeManagement() {
       const res = await api.get<NoticeDTO[]>('/notices')
       setNotices(res.data)
     } catch (e) {
-      console.error(e)
-    } finally {
+      } finally {
       setLoading(false)
     }
   }
@@ -38,8 +37,7 @@ export function NoticeManagement() {
       setFormData({ title: '', content: '', type: 'SYSTEM' })
       fetchNotices()
     } catch (e) {
-      console.error(e)
-    }
+      }
   }
 
   const handleDelete = async () => {
@@ -49,8 +47,7 @@ export function NoticeManagement() {
       setDeleteTarget(null)
       fetchNotices()
     } catch (e) {
-      console.error(e)
-    }
+      }
   }
 
   return (
@@ -63,9 +60,16 @@ export function NoticeManagement() {
           className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
           <Plus className="w-4 h-4" />
-         新規 공지
+          새 공지
         </button>
       </div>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-neutral-500 py-4">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600" />
+          <span className="text-sm">로딩 중...</span>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
         <table className="w-full">

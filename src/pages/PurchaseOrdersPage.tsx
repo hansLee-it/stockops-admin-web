@@ -339,8 +339,7 @@ export function PurchaseOrdersPage() {
       const response = await api.get('/v1/centers')
       setCenters(response.data)
     } catch (error) {
-      console.error('Failed to fetch centers:', error)
-    }
+      }
   }
 
   const fetchWarehousesByCenter = async (centerId: string) => {
@@ -348,8 +347,7 @@ export function PurchaseOrdersPage() {
       const response = await api.get(`/v1/warehouses/center/${centerId}`)
       setWarehouses(response.data)
     } catch (error) {
-      console.error('Failed to fetch warehouses:', error)
-    }
+      }
   }
 
   const fetchPurchaseOrders = async () => {
@@ -357,8 +355,7 @@ export function PurchaseOrdersPage() {
       const response = await api.get('/v1/purchase-orders')
       setPurchaseOrders(response.data)
     } catch (error) {
-      console.error('Failed to fetch purchase orders:', error)
-    } finally {
+      } finally {
       setLoading(false)
     }
   }
@@ -376,8 +373,7 @@ export function PurchaseOrdersPage() {
     try {
       await fetchPurchaseOrderDetail(po.id)
     } catch (error) {
-      console.error('Failed to fetch purchase order detail:', error)
-      showErrorToast(getServerErrorMessage(error, '발주 상세 조회 처리에 실패했습니다. 다시 시도해주세요.'))
+        showErrorToast(getServerErrorMessage(error, '발주 상세 조회 처리에 실패했습니다. 다시 시도해주세요.'))
     } finally {
       setIsDetailLoading(false)
     }
@@ -398,8 +394,7 @@ export function PurchaseOrdersPage() {
       setShowModal(false)
       setFormData({ centerId: '', warehouseId: '' })
     } catch (error) {
-      console.error('Failed to create purchase order:', error)
-      showErrorToast(getServerErrorMessage(error, '발주 생성 처리에 실패했습니다. 다시 시도해주세요.'))
+        showErrorToast(getServerErrorMessage(error, '발주 생성 처리에 실패했습니다. 다시 시도해주세요.'))
     }
   }
 
@@ -450,7 +445,6 @@ export function PurchaseOrdersPage() {
 
       showToast({ message: actionDefinition.successMessage, variant: 'success' })
     } catch (error) {
-      console.error(`Failed to ${action} purchase order:`, error)
       showErrorToast(getServerErrorMessage(error, `${actionDefinition.label} 처리에 실패했습니다. 다시 시도해주세요.`))
     } finally {
       setTransitioningPoId(null)
@@ -515,7 +509,7 @@ export function PurchaseOrdersPage() {
             type="button"
             onClick={() => void downloadExcelTemplate('purchase-orders')}
             disabled={!isOnline}
-            className="flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-neutral-700 hover:bg-neutral-50"
+            className="flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-neutral-700 hover:bg-neutral-50 min-h-[44px]"
           >
             <Download className="w-4 h-4" />
             템플릿 다운로드
@@ -524,7 +518,7 @@ export function PurchaseOrdersPage() {
             type="button"
             onClick={() => setShowExcelModal(true)}
             disabled={!isOnline}
-            className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2 text-primary-700 hover:bg-primary-100"
+            className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2 text-primary-700 hover:bg-primary-100 min-h-[44px]"
           >
             <Upload className="w-4 h-4" />
             엑셀 업로드
@@ -533,7 +527,7 @@ export function PurchaseOrdersPage() {
             type="button"
             onClick={() => setShowModal(true)}
             disabled={!isOnline}
-            className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
+            className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700 min-h-[44px]"
           >
             <Plus className="w-4 h-4" />
             새 발주
@@ -653,8 +647,9 @@ export function PurchaseOrdersPage() {
             <h2 className="mb-4 text-xl font-bold">새 발주</h2>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">요청 센터 *</label>
+                <label htmlFor="po-center" className="mb-1 block text-sm font-medium">요청 센터 *</label>
                 <select
+                  id="po-center"
                   value={formData.centerId}
                   onChange={(event) => setFormData({ ...formData, centerId: event.target.value })}
                   className="w-full rounded-lg border border-neutral-300 px-3 py-2"
@@ -669,8 +664,9 @@ export function PurchaseOrdersPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">입고 창고</label>
+                <label htmlFor="po-warehouse" className="mb-1 block text-sm font-medium">입고 창고</label>
                 <select
+                  id="po-warehouse"
                   value={formData.warehouseId}
                   onChange={(event) => setFormData({ ...formData, warehouseId: event.target.value })}
                   className="w-full rounded-lg border border-neutral-300 px-3 py-2"

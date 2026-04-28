@@ -107,13 +107,13 @@ export function InventoryPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">Inventory</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">재고 관리</h1>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => selectedInventory && setIsAdjustModalOpen(true)}
             disabled={!selectedInventory}
-            className="flex items-center gap-2 rounded bg-primary-600 px-4 py-2 min-h-[44px] text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+            className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 min-h-[44px] text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             <Package className="w-4 h-4" />
             <span className="hidden sm:inline">{selectedInventory ? 'Adjust Selected Stock' : 'Select Stock to Adjust'}</span>
@@ -544,7 +544,7 @@ function getStatusColor(status: string): string {
  * Formats ISO date string to locale date string.
  */
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString()
+  return new Date(dateString).toLocaleDateString('ko-KR')
 }
 
 /**

@@ -56,7 +56,6 @@ export function ProductsPage() {
       setProducts(response.content)
     } catch (err) {
       setError('상품 목록을 불러오는데 실패했습니다.')
-      console.error('Failed to fetch products:', err)
     } finally {
       setLoading(false)
     }
@@ -103,7 +102,6 @@ export function ProductsPage() {
       setShowModal(false)
       setEditingProduct(null)
     } catch (err) {
-      console.error('Failed to save product:', err)
       setError('상품 저장에 실패했습니다.')
     } finally {
       setSubmitting(false)
@@ -120,7 +118,6 @@ export function ProductsPage() {
       await deleteProduct(id)
       await fetchProducts()
     } catch (err) {
-      console.error('Failed to delete product:', err)
       setError('상품 삭제에 실패했습니다.')
     } finally {
       setDeleteConfirm({ open: false, id: null })

@@ -13,23 +13,30 @@ interface NoticeDTO {
 
 export function AdminPage() {
   const [notices, setNotices] = useState<NoticeDTO[]>([])
+  const [loading, setLoading] = useState(true)
 
   const fetchActiveNotices = useCallback(async () => {
     try {
       const res = await api.get<NoticeDTO[]>('/notices/active')
       setNotices(res.data)
     } catch (e) {
-      console.error(e)
-    }
+      }
   }, [])
 
   useEffect(() => {
-    fetchActiveNotices()
+    setLoading(true)
+    fetchActiveNotices().finally(() => setLoading(false))
   }, [fetchActiveNotices])
 
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold text-neutral-900">관리자 대시보드</h1>
+      {loading && (
+        <div className="flex items-center gap-2 text-neutral-500">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600" />
+          <span className="text-sm">로딩 중...</span>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-neutral-200 p-6">
           <div className="flex items-center gap-4">

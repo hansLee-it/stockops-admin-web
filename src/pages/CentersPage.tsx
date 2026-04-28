@@ -30,6 +30,7 @@ export function CentersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({ open: false, id: null })
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
+  const [formError, setFormError] = useState("")
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -48,14 +49,14 @@ export function CentersPage() {
       const response = await api.get('/v1/centers')
       setCenters(response.data)
     } catch (err) {
-      console.error('Failed to fetch centers:', err)
-      setError('센터 데이터를 불러오지 못했습니다.')
+        setError('센터 데이터를 불러오지 못했습니다.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setFormError("")
     e.preventDefault()
     try {
       if (editingCenter) {
@@ -68,7 +69,6 @@ export function CentersPage() {
       setEditingCenter(null)
       setFormData({ code: '', name: '', address: '', phone: '' })
     } catch (error) {
-      console.error('Failed to save center:', error)
     }
   }
 
@@ -88,7 +88,6 @@ export function CentersPage() {
       await api.delete(`/v1/centers/${id}`)
       fetchCenters()
     } catch (error) {
-      console.error('Failed to delete center:', error)
     } finally {
       setDeleteConfirm({ open: false, id: null })
     }
@@ -263,6 +262,11 @@ export function CentersPage() {
               {editingCenter ? '센터 수정' : '새 센터'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {formError && (
+                <div className="rounded-lg bg-error/10 p-3 text-sm text-error" role="alert">
+                  {formError}
+                </div>
+              )}
               <div>
                 <label htmlFor="center-code" className="block text-sm font-medium mb-1">센터 코드 *</label>
                 <input

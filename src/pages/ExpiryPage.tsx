@@ -111,9 +111,9 @@ export function ExpiryPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4 text-neutral-900">Expiry Management</h1>
+      <h1 className="text-2xl font-bold mb-4 text-neutral-900">유통기한 관리</h1>
       <p className="text-neutral-600 mb-6">
-        Monitor and manage products approaching their expiration dates.
+        유통기한이 임박한 상품을 모니터링하고 관리하세요.
       </p>
 
       {/* Summary Cards */}

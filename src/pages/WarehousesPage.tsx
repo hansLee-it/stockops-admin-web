@@ -43,6 +43,7 @@ export function WarehousesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({ open: false, id: null })
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
+  const [formError, setFormError] = useState("")
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -61,8 +62,7 @@ export function WarehousesPage() {
     try {
       const response = await api.get('/v1/centers')
       setCenters(response.data)
-    } catch (error) {
-      console.error('Failed to fetch centers:', error)
+    } catch {
     }
   }, [])
 
@@ -72,8 +72,7 @@ export function WarehousesPage() {
       setError(null)
       const response = await api.get('/v1/warehouses')
       setWarehouses(response.data)
-    } catch (err) {
-      console.error('Failed to fetch warehouses:', err)
+    } catch {
       setError('창고 데이터를 불러오지 못했습니다.')
     } finally {
       setLoading(false)
@@ -87,6 +86,7 @@ export function WarehousesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setFormError('')
     try {
       if (editingWarehouse) {
         await api.put(`/v1/warehouses/${editingWarehouse.id}`, formData)
@@ -97,8 +97,8 @@ export function WarehousesPage() {
       setShowModal(false)
       setEditingWarehouse(null)
       setFormData({ code: '', name: '', address: '', phone: '', centerId: '' })
-    } catch (error) {
-      console.error('Failed to save warehouse:', error)
+    } catch {
+      setFormError('저장에 실패했습니다. 다시 시도해주세요.')
     }
   }
 
@@ -119,7 +119,6 @@ export function WarehousesPage() {
       await api.delete(`/v1/warehouses/${id}`)
       fetchWarehouses()
     } catch (error) {
-      console.error('Failed to delete warehouse:', error)
     } finally {
       setDeleteConfirm({ open: false, id: null })
     }
@@ -139,7 +138,6 @@ export function WarehousesPage() {
       setCloseReason('')
       fetchWarehouses()
     } catch (error) {
-      console.error('Failed to close warehouse:', error)
     }
   }
 
@@ -428,6 +426,11 @@ export function WarehousesPage() {
               {editingWarehouse ? '창고 수정' : '새 창고'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {formError && (
+                <div className="rounded-lg bg-error/10 p-3 text-sm text-error" role="alert">
+                  {formError}
+                </div>
+              )}
               {!editingWarehouse && (
                 <div>
                   <label htmlFor="warehouse-center" className="block text-sm font-medium mb-1">소속 센터 *</label>
