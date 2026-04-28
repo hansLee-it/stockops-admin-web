@@ -113,20 +113,20 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">대시보드</h1>
           <p className="text-text-secondary mt-1">
-            안녕하세요, <span className="font-medium">{user?.name || '관리자'}</span>님! 
+            안녕하세요, <span className="font-medium">{user?.name || '관리자'}</span>님!
             현재 시스템 현황을 확인하세요.
           </p>
           <p className="text-sm text-text-secondary mt-2">{lastUpdatedText}</p>
         </div>
-        <button 
+        <button
           type="button"
           onClick={handleManualRefresh}
           disabled={isManualRefreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors disabled:cursor-not-allowed disabled:opacity-70"
+          className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors disabled:cursor-not-allowed disabled:opacity-70"
         >
           <RefreshCw className={`w-4 h-4 ${isManualRefreshing ? 'animate-spin' : ''}`} />
           {isManualRefreshing ? '새로고침 중...' : '새로고침'}
@@ -221,21 +221,21 @@ export function DashboardPage() {
         <div className="flex flex-wrap gap-3">
           <Link
             to="/inbound"
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
           >
             <ArrowDownToLine className="w-5 h-5" />
             입고 등록
           </Link>
           <Link
             to="/outbound"
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
           >
             <ArrowUpFromLine className="w-5 h-5" />
             출고 등록
           </Link>
           <Link
             to="/inventory"
-            className="flex items-center gap-2 px-5 py-2.5 bg-neutral-100 text-text-primary border border-neutral-200 rounded-lg hover:bg-neutral-200 transition-colors font-medium"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] bg-neutral-100 text-text-primary border border-neutral-200 rounded-lg hover:bg-neutral-200 transition-colors font-medium"
           >
             <Package className="w-5 h-5" />
             상품 등록

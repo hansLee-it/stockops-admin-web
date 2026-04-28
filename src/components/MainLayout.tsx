@@ -19,7 +19,7 @@ import {
   Building2, Warehouse, Menu, X,
   Thermometer, BarChart3, Brain,
   Shield, Bell, FileText, TrendingUp, SlidersHorizontal, ClipboardList,
-  ShoppingCart, ArrowLeftRight, Zap
+  ShoppingCart, ArrowLeftRight, Zap, MoreHorizontal
 } from 'lucide-react'
 
 interface NavItem {
@@ -170,8 +170,15 @@ export function MainLayout() {
     return item?.label || 'StockOps'
   }
 
+  const bottomNavItems = [
+    { to: '/dashboard', label: '홈', icon: LayoutDashboard },
+    { to: '/inbound', label: '입고', icon: ArrowDownToLine },
+    { to: '/outbound', label: '출고', icon: ArrowUpFromLine },
+    { to: '/inventory', label: '재고', icon: Package },
+  ]
+
   return (
-    <div data-testid="app-shell" className="min-h-screen flex bg-bg-secondary">
+    <div data-testid="app-shell" className="min-h-screen flex bg-bg-secondary pb-16 md:pb-0">
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:bg-transparent"
@@ -369,6 +376,34 @@ export function MainLayout() {
           <Outlet />
         </main>
       </div>
+
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-neutral-200 z-40 flex items-center justify-around">
+        {bottomNavItems.map((item) => {
+          const isActive = location.pathname === item.to
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 rounded-lg transition-colors ${
+                isActive
+                  ? 'text-primary-600'
+                  : 'text-neutral-400 hover:text-neutral-600'
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              <span className="text-[11px] mt-0.5 font-medium">{item.label}</span>
+            </Link>
+          )
+        })}
+        <button
+          type="button"
+          onClick={openSidebar}
+          className="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-3 rounded-lg text-neutral-400 hover:text-neutral-600 transition-colors"
+        >
+          <MoreHorizontal className="w-5 h-5" />
+          <span className="text-[11px] mt-0.5 font-medium">더보기</span>
+        </button>
+      </nav>
     </div>
   )
 }

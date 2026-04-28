@@ -34,6 +34,7 @@ import { NotificationsPage } from '@/pages/NotificationsPage'
 import { InventoryTransferPage } from '@/pages/InventoryTransferPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { InstallPrompt } from '@/components/pwa/InstallPrompt'
 
 /**
  * Main App component with route configuration.
@@ -53,6 +54,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 function App() {
   return (
     <BrowserRouter>
+      <InstallPrompt />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route

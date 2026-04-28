@@ -69,7 +69,7 @@ export function InboundPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-neutral-900">입고 관리</h1>
           {!isOnline && (
@@ -89,38 +89,41 @@ export function InboundPage() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {pendingCount > 0 && isOnline && (
             <button
               type="button"
               onClick={() => void syncPending()}
               disabled={isSyncing}
-              className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2 text-primary-700 hover:bg-primary-100 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 sm:px-4 py-2 text-sm text-primary-700 hover:bg-primary-100 transition-colors disabled:opacity-50 min-h-[44px]"
             >
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? '동기화 중...' : '동기화'}
+              <span className="hidden sm:inline">{isSyncing ? '동기화 중...' : '동기화'}</span>
+              <span className="sm:hidden">{isSyncing ? '동기화 중...' : '동기화'}</span>
             </button>
           )}
           <button
             type="button"
             onClick={() => void downloadExcelTemplate('inbounds')}
-            className="flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-neutral-700 hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-2 rounded-lg border border-neutral-300 px-3 sm:px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors min-h-[44px]"
           >
             <Download className="w-4 h-4" />
-            템플릿 다운로드
+            <span className="hidden sm:inline">템플릿 다운로드</span>
+            <span className="sm:hidden">템플릿</span>
           </button>
           <button
             type="button"
             onClick={() => setShowExcelModal(true)}
-            className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2 text-primary-700 hover:bg-primary-100 transition-colors"
+            className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 sm:px-4 py-2 text-sm text-primary-700 hover:bg-primary-100 transition-colors min-h-[44px]"
           >
             <Upload className="w-4 h-4" />
-            엑셀 업로드
+            <span className="hidden sm:inline">엑셀 업로드</span>
+            <span className="sm:hidden">업로드</span>
           </button>
           <button
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors min-h-[44px] text-sm"
           >
             <Plus className="w-5 h-5" />
             입고 등록
@@ -133,7 +136,7 @@ export function InboundPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as InboundStatus | '')}
-          className="px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full sm:w-auto px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           <option value="">전체 상태</option>
           <option value="DRAFT">임시저장</option>
@@ -141,89 +144,163 @@ export function InboundPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
+      <div className="bg-white rounded-lg shadow overflow-hidden">
         {inbounds && inbounds.length > 0 ? (
-          <table className="min-w-full divide-y divide-neutral-200">
-            <thead className="bg-neutral-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">일자</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">공급처</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">상태</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">총 수량</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-neutral-200">
+          <>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">일자</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">공급처</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">상태</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">총 수량</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-neutral-200">
+                  {paginatedInbounds.map((inbound) => (
+                    <tr key={inbound.id} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{inbound.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.inboundDate}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.supplier || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded ${
+                          inbound.status === 'CONFIRMED'
+                            ? 'bg-success/10 text-success'
+                            : 'bg-warning/10 text-warning'
+                        }`}>
+                          {inbound.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.totalQuantity}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedInbound(inbound)
+                              setShowDetailModal(true)
+                            }}
+                            className="text-primary-600 hover:text-primary-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            title="View Details"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </button>
+                          {inbound.status === 'DRAFT' && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedInbound(inbound)
+                                  setShowAddItemModal(true)
+                                }}
+                                className="text-primary-600 hover:text-primary-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                title="Add Item"
+                              >
+                                <Package className="w-5 h-5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedInbound(inbound)
+                                  setShowDetailModal(true)
+                                }}
+                                className="text-success hover:text-green-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                title="Confirm"
+                              >
+                                <Check className="w-5 h-5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="md:hidden divide-y divide-neutral-200">
               {paginatedInbounds.map((inbound) => (
-                <tr key={inbound.id} className="hover:bg-neutral-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{inbound.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.inboundDate}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.supplier || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <div key={inbound.id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-neutral-500">#{inbound.id}</span>
                     <span className={`px-2 py-1 text-xs font-medium rounded ${
-                      inbound.status === 'CONFIRMED' 
-                        ? 'bg-success/10 text-success' 
+                      inbound.status === 'CONFIRMED'
+                        ? 'bg-success/10 text-success'
                         : 'bg-warning/10 text-warning'
                     }`}>
                       {inbound.status}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.totalQuantity}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
-<button
-                         type="button"
-                         onClick={() => {
-                           setSelectedInbound(inbound)
-                           setShowDetailModal(true)
-                         }}
-                         className="text-primary-600 hover:text-primary-700"
-                         title="View Details"
-                       >
-                         <Eye className="w-5 h-5" />
-                       </button>
-                       {inbound.status === 'DRAFT' && (
-                         <>
-                           <button
-                             type="button"
-                             onClick={() => {
-                               setSelectedInbound(inbound)
-                               setShowAddItemModal(true)
-                             }}
-                             className="text-primary-600 hover:text-primary-700"
-                             title="Add Item"
-                           >
-                             <Package className="w-5 h-5" />
-                           </button>
-                           <button
-                             type="button"
-                             onClick={() => {
-                               setSelectedInbound(inbound)
-                               setShowDetailModal(true)
-                             }}
-                             className="text-success hover:text-green-700"
-                             title="Confirm"
-                           >
-                             <Check className="w-5 h-5" />
-                           </button>
-                        </>
-                      )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-neutral-500 block">일자</span>
+                      <span className="text-neutral-900">{inbound.inboundDate}</span>
                     </div>
-                  </td>
-                </tr>
-))}
-             </tbody>
-           </table>
-         ) : (
-           <EmptyState
-             title="No inbounds found"
-             description="Create your first inbound to get started"
-             actionLabel="New Inbound"
-             onAction={() => setShowCreateModal(true)}
-           />
-         )}
-       </div>
+                    <div>
+                      <span className="text-neutral-500 block">공급처</span>
+                      <span className="text-neutral-900">{inbound.supplier || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500 block">총 수량</span>
+                      <span className="text-neutral-900">{inbound.totalQuantity}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedInbound(inbound)
+                        setShowDetailModal(true)
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] text-sm font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      상세
+                    </button>
+                    {inbound.status === 'DRAFT' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedInbound(inbound)
+                            setShowAddItemModal(true)
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] text-sm font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                        >
+                          <Package className="w-4 h-4" />
+                          추가
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedInbound(inbound)
+                            setShowDetailModal(true)
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] text-sm font-medium text-white bg-success rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          <Check className="w-4 h-4" />
+                          확정
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <EmptyState
+            title="No inbounds found"
+            description="Create your first inbound to get started"
+            actionLabel="New Inbound"
+            onAction={() => setShowCreateModal(true)}
+          />
+        )}
+      </div>
 
        {totalPages > 1 && (
         <div className="flex items-center justify-between px-6 py-3 border-t border-neutral-200">
@@ -351,7 +428,7 @@ function CreateInboundModal({ onClose }: { onClose: () => void }) {
               type="text"
               value={supplier}
               onChange={(e) => setSupplier(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Enter supplier name"
             />
           </div>
@@ -361,21 +438,21 @@ function CreateInboundModal({ onClose }: { onClose: () => void }) {
               type="date"
               value={inboundDate}
               onChange={(e) => setInboundDate(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-neutral-600 hover:text-neutral-700"
+              className="px-4 py-2 min-h-[44px] text-neutral-600 hover:text-neutral-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
               {createMutation.isPending ? 'Creating...' : 'Create'}
             </button>
@@ -625,9 +702,9 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
                 <button
                   type="button"
                   onClick={() => setShowScanner(true)}
-                  className="mt-2 flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700"
+                  className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 min-h-[48px] text-base font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors"
                 >
-                  <ScanBarcode className="w-4 h-4" />
+                  <ScanBarcode className="w-5 h-5" />
                   바코드 스캔
                 </button>
               </>
@@ -666,7 +743,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
               type="text"
               value={lotNumber}
               onChange={(e) => setLotNumber(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Enter LOT number"
               required
             />
@@ -677,7 +754,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
               type="date"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <div className="mb-4">
@@ -686,7 +763,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
               type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Enter quantity"
               min="1"
               required
@@ -700,7 +777,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
                 setCenterId(e.target.value)
                 setWarehouseId('')
               }}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               required={!isOnline}
             >
               <option value="">Select Center</option>
@@ -716,7 +793,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
             <select
               value={warehouseId}
               onChange={(e) => setWarehouseId(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               required={!isOnline}
               disabled={!centerId}
             >
@@ -733,7 +810,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
             <select
               value={locationId}
               onChange={(e) => setLocationId(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
             >
               <option value="">Select Location</option>
@@ -748,14 +825,14 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-neutral-600 hover:text-neutral-700"
+              className="px-4 py-2 min-h-[44px] text-neutral-600 hover:text-neutral-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={addItemMutation.isPending}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
               {addItemMutation.isPending ? 'Adding...' : 'Add Item'}
             </button>

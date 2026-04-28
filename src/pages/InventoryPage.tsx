@@ -106,23 +106,24 @@ export function InventoryPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-neutral-900">Inventory</h1>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => selectedInventory && setIsAdjustModalOpen(true)}
             disabled={!selectedInventory}
-            className="flex items-center gap-2 rounded bg-primary-600 px-4 py-2 text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+            className="flex items-center gap-2 rounded bg-primary-600 px-4 py-2 min-h-[44px] text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             <Package className="w-4 h-4" />
-            {selectedInventory ? 'Adjust Selected Stock' : 'Select Stock to Adjust'}
+            <span className="hidden sm:inline">{selectedInventory ? 'Adjust Selected Stock' : 'Select Stock to Adjust'}</span>
+            <span className="sm:hidden">Adjust</span>
           </button>
         </div>
       </div>
 
       {categorySummaries.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
           <button
             type="button"
             onClick={() => {
@@ -171,7 +172,7 @@ export function InventoryPage() {
 
       <div className="bg-white rounded-lg shadow mb-4">
         <div className="p-4 border-b border-neutral-200">
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
@@ -182,11 +183,11 @@ export function InventoryPage() {
                   setSearchTerm(e.target.value)
                   setCurrentPage(0)
                 }}
-                className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-10 pr-4 py-2 min-h-[44px] text-base border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div className="flex items-center gap-2">
-              <Tag className="w-4 h-4 text-neutral-500" />
+              <Tag className="w-4 h-4 text-neutral-500 hidden sm:block" />
               <select
                 value={categoryFilter ?? ''}
                 onChange={(e) => {
@@ -194,7 +195,7 @@ export function InventoryPage() {
                   setCategoryFilter(val ? Number(val) : null)
                   setCurrentPage(0)
                 }}
-                className="px-3 py-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                className="w-full sm:w-auto px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
               >
                 <option value="">All Categories</option>
                 {categories.map((cat) => (
@@ -205,14 +206,14 @@ export function InventoryPage() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-neutral-500" />
+              <Filter className="w-4 h-4 text-neutral-500 hidden sm:block" />
               <select
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value)
                   setCurrentPage(0)
                 }}
-                className="px-3 py-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                className="w-full sm:w-auto px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
               >
                 <option value="all">All Status</option>
                 <option value="ACTIVE">Active</option>
@@ -249,7 +250,7 @@ export function InventoryPage() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
@@ -344,6 +345,87 @@ export function InventoryPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            <div className="md:hidden divide-y divide-neutral-200">
+              {paginatedInventory.map((item: Inventory) => (
+                <div
+                  key={item.id}
+                  className={`p-4 space-y-3 transition-colors ${
+                    selectedInventoryId === item.id ? 'bg-primary-50' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-neutral-900">{item.productName}</div>
+                      <div className="text-sm text-neutral-500">{item.productBarcode}</div>
+                    </div>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(getInventoryStatus(item))}`}>
+                      {getInventoryStatus(item)}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-neutral-500 block">Location</span>
+                      <span className="text-neutral-900">{item.locationCode}</span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500 block">Lot</span>
+                      <span className="text-neutral-900">{item.lotNumber}</span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500 block">Expiry</span>
+                      <span className="text-neutral-900">{formatDate(item.expiryDate)}</span>
+                      {(() => {
+                        const status = getExpiryStatus(item.expiryDate)
+                        return status ? (
+                          <div className={`text-xs ${status.color}`}>
+                            {status.label}
+                          </div>
+                        ) : null
+                      })()}
+                    </div>
+                    <div>
+                      <span className="text-neutral-500 block">Quantity</span>
+                      <span className="text-neutral-900">{item.quantity}</span>
+                      {item.reservedQuantity > 0 && (
+                        <div className="text-xs text-neutral-500">
+                          Reserved: {item.reservedQuantity}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setSelectedInventoryId(item.id)
+                        setIsAdjustModalOpen(true)
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] text-sm font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                    >
+                      Adjust
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => event.stopPropagation()}
+                      className="flex items-center justify-center px-3 py-2.5 min-h-[44px] min-w-[44px] hover:bg-neutral-100 rounded-lg transition-colors"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4 text-neutral-600" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => event.stopPropagation()}
+                      className="flex items-center justify-center px-3 py-2.5 min-h-[44px] min-w-[44px] hover:bg-neutral-100 rounded-lg transition-colors"
+                      title="Transaction History"
+                    >
+                      <History className="w-4 h-4 text-neutral-600" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {totalPages > 1 && (
