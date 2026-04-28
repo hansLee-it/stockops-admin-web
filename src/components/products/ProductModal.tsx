@@ -6,9 +6,12 @@
  * @since 1.0
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { X } from 'lucide-react'
+import { CategorySelector } from '@/components/category/CategorySelector'
+import { useCategories } from '@/hooks/useCategories'
 import type { ProductDTO, CreateProductRequest, UpdateProductRequest } from '@/types/product'
+import type { Category } from '@/types/category'
 
 interface ProductModalProps {
   isOpen: boolean
@@ -23,6 +26,7 @@ const initialFormData: CreateProductRequest = {
   name: '',
   description: '',
   category: '',
+  categoryId: undefined,
   unit: 'EA',
   expiryManaged: true,
   defaultPrice: 0,
@@ -37,6 +41,19 @@ export function ProductModal({
   isLoading = false,
 }: ProductModalProps) {
   const [formData, setFormData] = useState<CreateProductRequest>(initialFormData)
+  const { data: categories = [] } = useCategories()
+
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, Category>()
+    function traverse(list: Category[]) {
+      for (const c of list) {
+        map.set(c.id, c)
+        if (c.children && c.children.length > 0) traverse(c.children)
+      }
+    }
+    traverse(categories)
+    return map
+  }, [categories])
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -46,6 +63,7 @@ export function ProductModal({
         name: product.name,
         description: product.description || '',
         category: product.category || '',
+        categoryId: product.categoryId,
         unit: product.unit,
         expiryManaged: product.expiryManaged,
         defaultPrice: product.defaultPrice || 0,
@@ -57,6 +75,15 @@ export function ProductModal({
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [product, isOpen])
 
+  const handleCategoryChange = (categoryId: number | null) => {
+    const selectedCategory = categoryId ? categoryMap.get(categoryId) : null
+    setFormData({
+      ...formData,
+      categoryId: categoryId ?? undefined,
+      category: selectedCategory?.name ?? '',
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (product) {
@@ -64,6 +91,7 @@ export function ProductModal({
         name: formData.name,
         description: formData.description || undefined,
         category: formData.category || undefined,
+        categoryId: formData.categoryId,
         unit: formData.unit,
         expiryManaged: formData.expiryManaged,
         defaultPrice: formData.defaultPrice || undefined,
@@ -141,17 +169,16 @@ export function ProductModal({
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">카테고리</label>
+            <CategorySelector
+              value={formData.categoryId ?? null}
+              onChange={handleCategoryChange}
+              nullable
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">카테고리</label>
-              <input
-                type="text"
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="식품, 음료 등"
-              />
-            </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
                 단위 <span className="text-error">*</span>

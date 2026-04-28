@@ -9,8 +9,11 @@
 import { useState, useMemo } from 'react'
 import { InventoryAdjustModal } from '@/components/inventory/InventoryAdjustModal'
 import { useInventory } from '@/hooks/useInventory'
+import { useCategories } from '@/hooks/useCategories'
+import { useProducts } from '@/hooks/useProduct'
 import type { Inventory } from '@/types/inventory'
-import { Search, Filter, Eye, History, Package, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { Category } from '@/types/category'
+import { Search, Filter, Eye, History, Package, ChevronLeft, ChevronRight, Tag } from 'lucide-react'
 import { EmptyState } from '@/components/common/EmptyState'
 
 /**
@@ -21,17 +24,62 @@ import { EmptyState } from '@/components/common/EmptyState'
 export function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [categoryFilter, setCategoryFilter] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [selectedInventoryId, setSelectedInventoryId] = useState<number | null>(null)
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false)
   const pageSize = 10
 
   const { data: inventory = [], isLoading, error } = useInventory()
+  const { data: categories = [] } = useCategories()
+  const { data: products = [] } = useProducts()
 
   const selectedInventory = useMemo(
     () => inventory.find((item: Inventory) => item.id === selectedInventoryId) ?? null,
     [inventory, selectedInventoryId],
   )
+
+  const productCategoryMap = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const product of products) {
+      if (product.categoryId) {
+        map.set(product.id, product.categoryId)
+      }
+    }
+    return map
+  }, [products])
+
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, Category>()
+    function traverse(list: Category[]) {
+      for (const c of list) {
+        map.set(c.id, c)
+        if (c.children && c.children.length > 0) traverse(c.children)
+      }
+    }
+    traverse(categories)
+    return map
+  }, [categories])
+
+  const categorySummaries = useMemo(() => {
+    const summaryMap = new Map<number, { quantity: number; productIds: Set<number> }>()
+    for (const item of inventory) {
+      const categoryId = productCategoryMap.get(item.productId)
+      if (!categoryId) continue
+      const existing = summaryMap.get(categoryId) ?? { quantity: 0, productIds: new Set<number>() }
+      existing.quantity += item.quantity
+      existing.productIds.add(item.productId)
+      summaryMap.set(categoryId, existing)
+    }
+    return Array.from(summaryMap.entries())
+      .map(([categoryId, data]) => ({
+        categoryId,
+        categoryName: categoryMap.get(categoryId)?.name ?? 'Unknown',
+        totalQuantity: data.quantity,
+        productCount: data.productIds.size,
+      }))
+      .sort((a, b) => b.totalQuantity - a.totalQuantity)
+  }, [inventory, productCategoryMap, categoryMap])
 
   const filteredInventory = useMemo(() => {
     return inventory.filter((item: Inventory) => {
@@ -42,14 +90,17 @@ export function InventoryPage() {
 
       const matchesStatus = statusFilter === 'all' || getInventoryStatus(item) === statusFilter
 
-      return matchesSearch && matchesStatus
+      const matchesCategory =
+        categoryFilter === null || productCategoryMap.get(item.productId) === categoryFilter
+
+      return matchesSearch && matchesStatus && matchesCategory
     })
-  }, [inventory, searchTerm, statusFilter])
+  }, [inventory, searchTerm, statusFilter, categoryFilter, productCategoryMap])
 
   const paginatedInventory = useMemo(() => {
     const start = currentPage * pageSize
     return filteredInventory.slice(start, start + pageSize)
-  }, [filteredInventory, currentPage, pageSize])
+  }, [filteredInventory, currentPage])
 
   const totalPages = Math.ceil(filteredInventory.length / pageSize)
 
@@ -70,6 +121,54 @@ export function InventoryPage() {
         </div>
       </div>
 
+      {categorySummaries.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+          <button
+            type="button"
+            onClick={() => {
+              setCategoryFilter(null)
+              setCurrentPage(0)
+            }}
+            className={`p-4 rounded-xl border transition-all text-left ${
+              categoryFilter === null
+                ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
+                : 'border-neutral-200 bg-white hover:shadow-md'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Tag className="w-4 h-4 text-primary-600" />
+              <span className="text-sm font-medium text-neutral-700">전체</span>
+            </div>
+            <p className="text-2xl font-bold text-neutral-900">
+              {categorySummaries.reduce((sum, c) => sum + c.totalQuantity, 0)}
+            </p>
+            <p className="text-xs text-neutral-500">총 수량</p>
+          </button>
+          {categorySummaries.map((summary) => (
+            <button
+              key={summary.categoryId}
+              type="button"
+              onClick={() => {
+                setCategoryFilter(summary.categoryId)
+                setCurrentPage(0)
+              }}
+              className={`p-4 rounded-xl border transition-all text-left ${
+                categoryFilter === summary.categoryId
+                  ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
+                  : 'border-neutral-200 bg-white hover:shadow-md'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Tag className="w-4 h-4 text-primary-600" />
+                <span className="text-sm font-medium text-neutral-700">{summary.categoryName}</span>
+              </div>
+              <p className="text-2xl font-bold text-neutral-900">{summary.totalQuantity}</p>
+              <p className="text-xs text-neutral-500">{summary.productCount}개 품목</p>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow mb-4">
         <div className="p-4 border-b border-neutral-200">
           <div className="flex gap-4">
@@ -87,6 +186,25 @@ export function InventoryPage() {
               />
             </div>
             <div className="flex items-center gap-2">
+              <Tag className="w-4 h-4 text-neutral-500" />
+              <select
+                value={categoryFilter ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setCategoryFilter(val ? Number(val) : null)
+                  setCurrentPage(0)
+                }}
+                className="px-3 py-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {'  '.repeat(cat.level - 1)}{cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-neutral-500" />
               <select
                 value={statusFilter}
@@ -94,7 +212,7 @@ export function InventoryPage() {
                   setStatusFilter(e.target.value)
                   setCurrentPage(0)
                 }}
-                className="px-3 py-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="px-3 py-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
               >
                 <option value="all">All Status</option>
                 <option value="ACTIVE">Active</option>

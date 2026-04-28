@@ -6,14 +6,16 @@
  * @since 1.0
  */
 
-import { useState, useEffect, useMemo } from 'react'
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Download, Upload, Tag } from 'lucide-react'
 import { downloadExcelTemplate } from '@/api/excel'
 import { ExcelUploadModal } from '@/components/common/ExcelUploadModal'
 import { ProductModal } from '@/components/products/ProductModal'
 import { ProductDetailDrawer } from '@/components/products/ProductDetailDrawer'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { useCategories } from '@/hooks/useCategories'
 import type { ProductDTO, CreateProductRequest, UpdateProductRequest } from '@/types/product'
+import type { Category } from '@/types/category'
 import { getProducts, createProduct, updateProduct, deleteProduct } from '@/api/products'
 
 export function ProductsPage() {
@@ -25,18 +27,28 @@ export function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<ProductDTO | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({ open: false, id: null })
   const [detailProduct, setDetailProduct] = useState<ProductDTO | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const pageSize = 10
 
-  useEffect(() => {
-    fetchProducts()
-  }, [])
+  const { data: categories = [] } = useCategories()
 
-  const fetchProducts = async () => {
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, Category>()
+    function traverse(list: Category[]) {
+      for (const c of list) {
+        map.set(c.id, c)
+        if (c.children && c.children.length > 0) traverse(c.children)
+      }
+    }
+    traverse(categories)
+    return map
+  }, [categories])
+
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -48,15 +60,11 @@ export function ProductsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const uniqueCategories = useMemo(() => {
-    const categories = new Set<string>()
-    products.forEach((p) => {
-      if (p.category) categories.add(p.category)
-    })
-    return Array.from(categories).sort()
-  }, [products])
+  useEffect(() => {
+    void fetchProducts()
+  }, [fetchProducts])
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -65,16 +73,21 @@ export function ProductsPage() {
         product.barcode.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.name.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter
+      if (categoryFilter === null) return matchesSearch
+
+      const matchesCategory =
+        product.categoryId === categoryFilter ||
+        product.category === categoryMap.get(categoryFilter)?.name ||
+        product.category === categoryFilter.toString()
 
       return matchesSearch && matchesCategory
     })
-  }, [products, searchTerm, categoryFilter])
+  }, [products, searchTerm, categoryFilter, categoryMap])
 
   const paginatedProducts = useMemo(() => {
     const start = currentPage * pageSize
     return filteredProducts.slice(start, start + pageSize)
-  }, [filteredProducts, currentPage, pageSize])
+  }, [filteredProducts, currentPage])
 
   const totalPages = Math.ceil(filteredProducts.length / pageSize)
 
@@ -180,21 +193,25 @@ export function ProductsPage() {
                 className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value)
-                setCurrentPage(0)
-              }}
-              className="px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="all">전체 카테고리</option>
-              {uniqueCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <select
+                value={categoryFilter ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setCategoryFilter(val ? Number(val) : null)
+                  setCurrentPage(0)
+                }}
+                className="pl-10 pr-8 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white min-w-[180px]"
+              >
+                <option value="">전체 카테고리</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {'  '.repeat(cat.level - 1)}{cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -263,7 +280,9 @@ export function ProductsPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-sm text-neutral-600">
-                          {product.category || '-'}
+                          {product.categoryId
+                            ? (categoryMap.get(product.categoryId)?.name ?? product.category ?? '-')
+                            : (product.category || '-')}
                         </td>
                         <td className="px-6 py-4 text-sm text-neutral-600">{product.unit}</td>
                         <td className="px-6 py-4 text-right text-sm font-medium">

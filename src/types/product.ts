@@ -14,7 +14,10 @@ export interface ProductDTO {
   barcode: string
   name: string
   description: string
+  /** Category name (legacy string field) */
   category: string
+  /** Category ID from category master (optional, for new category system) */
+  categoryId?: number
   unit: string
   expiryManaged: boolean
   defaultPrice: number
@@ -31,6 +34,7 @@ export interface CreateProductRequest {
   name: string
   description?: string
   category?: string
+  categoryId?: number
   unit: string
   expiryManaged: boolean
   defaultPrice?: number
@@ -44,6 +48,7 @@ export interface UpdateProductRequest {
   name?: string
   description?: string
   category?: string
+  categoryId?: number
   unit?: string
   expiryManaged?: boolean
   defaultPrice?: number
