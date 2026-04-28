@@ -89,7 +89,7 @@ export function InventoryTurnoverTable({ items }: InventoryTurnoverTableProps) {
           className="flex items-center gap-2 px-3 py-2 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors text-sm font-medium text-text-secondary"
         >
           <Download className="w-4 h-4" />
-          CSV 낳내기
+          CSV 내보내기
         </button>
       </div>
 

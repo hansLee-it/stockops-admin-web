@@ -92,11 +92,12 @@ export function useXyzAnalysis(centerId?: number, enabled = true): UseQueryResul
  * @param centerId - Optional center filter
  * @returns React Query result with matrix cells
  */
-export function useAbcXyzMatrix(centerId?: number): UseQueryResult<AbcXyzMatrixReportResponse, AxiosError> {
+export function useAbcXyzMatrix(centerId?: number, enabled = true): UseQueryResult<AbcXyzMatrixReportResponse, AxiosError> {
   return useQuery({
     queryKey: ['reports', 'abc-xyz-matrix', centerId],
     queryFn: () => getAbcXyzMatrixReport(centerId),
     staleTime: REPORT_STALE_TIME,
+    enabled,
   })
 }
 
@@ -112,13 +113,14 @@ export function useExpiryWaste(
   from?: string,
   to?: string,
   centerId?: number,
+  enabled = true,
 ): UseQueryResult<ExpiryWasteReportResponse, AxiosError> {
   const filter: AnalyticsQueryFilter = { from, to, centerId }
   return useQuery({
     queryKey: ['reports', 'expiry-waste', from, to, centerId],
     queryFn: () => getExpiryWasteReport(filter),
     staleTime: REPORT_STALE_TIME,
-    enabled: !!from && !!to,
+    enabled: enabled && !!from && !!to,
   })
 }
 
@@ -134,13 +136,14 @@ export function useLeadTime(
   from?: string,
   to?: string,
   centerId?: number,
+  enabled = true,
 ): UseQueryResult<PurchaseOrderLeadTimeReportResponse, AxiosError> {
   const filter: AnalyticsQueryFilter = { from, to, centerId }
   return useQuery({
     queryKey: ['reports', 'lead-time', from, to, centerId],
     queryFn: () => getPurchaseOrderLeadTimeReport(filter),
     staleTime: REPORT_STALE_TIME,
-    enabled: !!from && !!to,
+    enabled: enabled && !!from && !!to,
   })
 }
 
@@ -156,12 +159,13 @@ export function useStockAging(
   from?: string,
   to?: string,
   centerId?: number,
+  enabled = true,
 ): UseQueryResult<StockAgingReportResponse, AxiosError> {
   const filter: AnalyticsQueryFilter = { from, to, centerId }
   return useQuery({
     queryKey: ['reports', 'stock-aging', from, to, centerId],
     queryFn: () => getStockAgingReport(filter),
     staleTime: REPORT_STALE_TIME,
-    enabled: !!from && !!to,
+    enabled: enabled && !!from && !!to,
   })
 }

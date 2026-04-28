@@ -8,13 +8,17 @@
 
 import { useState, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Plus, Eye, Check, Package, ScanBarcode, Download, Upload, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Eye, Check, Package, ScanBarcode, Download, Upload, ChevronLeft, ChevronRight, WifiOff, RefreshCw, Database } from 'lucide-react'
 import { useInbounds, useInboundItems, useCreateInbound, useAddInboundItem, useConfirmInbound } from '@/hooks/useInbound'
 import { useProducts } from '@/hooks/useProduct'
 import { useLocations } from '@/hooks/useLocation'
+import { useCenters } from '@/hooks/useCenter'
+import { useWarehousesByCenter } from '@/hooks/useWarehouse'
+import { useOfflineInbound } from '@/hooks/useOfflineInbound'
 import { ProductSelectDropdown } from '@/components/products/ProductSelectDropdown'
 import { BarcodeScanner } from '@/components/common/BarcodeScanner'
 import { ExcelUploadModal } from '@/components/common/ExcelUploadModal'
+import { OfflineInboundQueue } from '@/components/offline/OfflineInboundQueue'
 import { downloadExcelTemplate } from '@/api/excel'
 import type { Inbound, InboundStatus } from '@/types/inbound'
 import type { Location } from '@/types/location'
@@ -33,10 +37,12 @@ export function InboundPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [showExcelModal, setShowExcelModal] = useState(false)
+  const [showQueueModal, setShowQueueModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
 
   const { data: inbounds, isLoading, error } = useInbounds(statusFilter || undefined)
+  const { isOnline, pendingCount, isSyncing, syncPending } = useOfflineInbound()
 
   const paginatedInbounds = useMemo(() => {
     const start = currentPage * pageSize
@@ -64,8 +70,37 @@ export function InboundPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">입고 관리</h1>
         <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-neutral-900">입고 관리</h1>
+          {!isOnline && (
+            <span className="flex items-center gap-1 px-2 py-1 bg-error/10 text-error text-xs font-medium rounded">
+              <WifiOff className="w-3 h-3" />
+              오프라인
+            </span>
+          )}
+          {pendingCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowQueueModal(true)}
+              className="flex items-center gap-1 px-2 py-1 bg-warning/10 text-warning text-xs font-medium rounded hover:bg-warning/20 transition-colors"
+            >
+              <Database className="w-3 h-3" />
+              대기 {pendingCount}개
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {pendingCount > 0 && isOnline && (
+            <button
+              type="button"
+              onClick={() => void syncPending()}
+              disabled={isSyncing}
+              className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2 text-primary-700 hover:bg-primary-100 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? '동기화 중...' : '동기화'}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => void downloadExcelTemplate('inbounds')}
@@ -267,6 +302,14 @@ export function InboundPage() {
         onClose={() => setShowExcelModal(false)}
         onImported={() => queryClient.invalidateQueries({ queryKey: ['inbounds'] })}
       />
+
+      <OfflineInboundQueue
+        isOpen={showQueueModal}
+        onClose={() => setShowQueueModal(false)}
+        onSyncAll={syncPending}
+        isSyncing={isSyncing}
+        isOnline={isOnline}
+      />
     </div>
   )
 }
@@ -463,15 +506,22 @@ function InboundDetailModal({ inbound, onClose }: { inbound: Inbound; onClose: (
 function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () => void }) {
   const { data: products, isLoading: productsLoading } = useProducts()
   const { data: locations } = useLocations()
+  const { data: centers } = useCenters()
   const addItemMutation = useAddInboundItem(inboundId)
+  const { saveOffline, isOnline } = useOfflineInbound()
 
   const [productId, setProductId] = useState<number | null>(null)
   const [lotNumber, setLotNumber] = useState('')
   const [expiryDate, setExpiryDate] = useState('')
   const [quantity, setQuantity] = useState('')
   const [locationId, setLocationId] = useState('')
+  const [centerId, setCenterId] = useState('')
+  const [warehouseId, setWarehouseId] = useState('')
   const [showScanner, setShowScanner] = useState(false)
   const [scanError, setScanError] = useState('')
+
+  const selectedCenterId = centerId ? Number(centerId) : null
+  const { data: warehouses } = useWarehousesByCenter(selectedCenterId)
 
   const handleBarcodeScan = (barcode: string) => {
     const product = products?.find((p) => p.barcode === barcode)
@@ -499,6 +549,32 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
       return
     }
 
+    if (!isOnline) {
+      const product = products?.find((p) => p.id === productId)
+      if (!product) return
+      if (!centerId.trim() || !warehouseId.trim()) return
+
+      void saveOffline({
+        productBarcode: product.barcode,
+        quantity: parsedQuantity,
+        lotNumber,
+        expiryDate: expiryDate || undefined,
+        locationId: parsedLocationId,
+        warehouseId: Number(warehouseId),
+        centerId: Number(centerId),
+      })
+
+      setProductId(null)
+      setLotNumber('')
+      setExpiryDate('')
+      setQuantity('')
+      setLocationId('')
+      setCenterId('')
+      setWarehouseId('')
+      onClose()
+      return
+    }
+
     addItemMutation.mutate(
       {
         productId,
@@ -514,6 +590,8 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
           setExpiryDate('')
           setQuantity('')
           setLocationId('')
+          setCenterId('')
+          setWarehouseId('')
           onClose()
         },
       }
@@ -523,7 +601,15 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold text-neutral-900 mb-4">Add Item to Inbound</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-neutral-900">Add Item to Inbound</h2>
+          {!isOnline && (
+            <span className="flex items-center gap-1 px-2 py-1 bg-error/10 text-error text-xs font-medium rounded">
+              <WifiOff className="w-3 h-3" />
+              오프라인 저장 모드
+            </span>
+          )}
+        </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-neutral-700 mb-1">Product</label>
@@ -605,6 +691,42 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
               min="1"
               required
             />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Center</label>
+            <select
+              value={centerId}
+              onChange={(e) => {
+                setCenterId(e.target.value)
+                setWarehouseId('')
+              }}
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              required={!isOnline}
+            >
+              <option value="">Select Center</option>
+              {centers?.map((center) => (
+                <option key={center.id} value={center.id}>
+                  {center.code} - {center.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Warehouse</label>
+            <select
+              value={warehouseId}
+              onChange={(e) => setWarehouseId(e.target.value)}
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              required={!isOnline}
+              disabled={!centerId}
+            >
+              <option value="">Select Warehouse</option>
+              {warehouses?.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.code} - {warehouse.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-neutral-700 mb-1">Location</label>
