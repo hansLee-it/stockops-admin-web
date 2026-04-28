@@ -20,6 +20,7 @@ export async function getAIRecommendations(filter: AIRecommendationFilter = {}):
   if (filter.centerId != null) params.centerId = filter.centerId
   if (filter.warehouseId != null) params.warehouseId = filter.warehouseId
   if (filter.productId != null) params.productId = filter.productId
+  if (filter.model) params.model = filter.model
 
   const response = await api.get<AIRecommendation[]>('/v1/ai/recommendations', { params })
   return response.data
@@ -34,4 +35,10 @@ export async function getAIRecommendations(filter: AIRecommendationFilter = {}):
 export async function approveAIRecommendation(recommendationId: number): Promise<AIRecommendation> {
   const response = await api.post<AIRecommendation>(`/v1/ai/recommendations/${recommendationId}/approve`)
   return response.data
+}
+
+export async function generateAIRecommendations(businessDate: string, model?: string): Promise<void> {
+  const params: Record<string, string> = { businessDate }
+  if (model) params.model = model
+  await api.post('/v1/ai/recommendations/generate', null, { params })
 }

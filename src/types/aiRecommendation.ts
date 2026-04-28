@@ -69,6 +69,8 @@ export interface AIRecommendation {
   approvedAt: string | null
   /** Approving user id */
   approvedByUserId: number | null
+  /** Forecast model identifier that produced this recommendation */
+  modelVersion: string
   /** Creation timestamp */
   createdAt: string
   /** Last update timestamp */
@@ -87,4 +89,6 @@ export interface AIRecommendationFilter {
   warehouseId?: number
   /** Optional product filter */
   productId?: number
+  /** Optional forecast model selector (default: "statistical") */
+  model?: string
 }
