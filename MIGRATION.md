@@ -8,7 +8,7 @@ on 2026-05-11 using `git filter-branch`.
 ## What Changed
 
 - Extracted `front_web/` directory to repository root
-- Preserved all git history (70 commits)
+- Preserved all git history (71 commits)
 - Added standalone `.gitignore`, `.env.example`, and CI/CD configuration
 - Removed Pi-specific deployment files
 
