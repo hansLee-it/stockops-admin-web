@@ -79,29 +79,31 @@ export function LoginPage() {
         )}
         <div className="mb-4">
           <label htmlFor="email" className="block text-sm font-medium mb-1 text-neutral-700">
-            Email
+            이메일
           </label>
           <input
             data-testid="login-email"
             id="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
             required
           />
         </div>
         <div className="mb-6">
           <label htmlFor="password" className="block text-sm font-medium mb-1 text-neutral-700">
-            Password
+            비밀번호
           </label>
           <input
             data-testid="login-password"
             id="password"
             type="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-2 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
             required
           />
         </div>
@@ -109,7 +111,7 @@ export function LoginPage() {
           data-testid="login-submit"
           type="submit"
           disabled={loading}
-          className="w-full bg-primary-600 text-white p-2 rounded hover:bg-primary-700 disabled:opacity-50 transition-colors"
+          className="w-full min-h-[44px] bg-primary-600 text-white px-3 py-2 rounded hover:bg-primary-700 disabled:opacity-50 transition-colors"
         >
           {loading ? '로그인 중...' : '로그인'}
         </button>

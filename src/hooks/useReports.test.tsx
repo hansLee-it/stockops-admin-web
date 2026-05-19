@@ -15,7 +15,6 @@ import * as analyticsApi from '@/api/analytics'
 import type {
   InventoryTurnoverReportResponse,
   AbcAnalysisReportResponse,
-  XyzAnalysisReportResponse,
   AbcXyzMatrixReportResponse,
   ExpiryWasteReportResponse,
   PurchaseOrderLeadTimeReportResponse,
@@ -99,6 +98,16 @@ describe('useReports hooks', () => {
     expect(reportsApi.getAbcAnalysisReport).toHaveBeenCalledWith(1)
   })
 
+  it('useAbcAnalysis is disabled without centerId', () => {
+    vi.mocked(reportsApi.getAbcAnalysisReport).mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useAbcAnalysis(undefined, true), { wrapper: createWrapper() })
+
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(reportsApi.getAbcAnalysisReport).not.toHaveBeenCalled()
+  })
+
   it('useXyzAnalysis returns error on API failure', async () => {
     vi.mocked(reportsApi.getXyzAnalysisReport).mockRejectedValue(new Error('Server error'))
 
@@ -118,6 +127,16 @@ describe('useReports hooks', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(mockResponse)
+  })
+
+  it('useAbcXyzMatrix is disabled without centerId', () => {
+    vi.mocked(reportsApi.getAbcXyzMatrixReport).mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useAbcXyzMatrix(undefined, true), { wrapper: createWrapper() })
+
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(reportsApi.getAbcXyzMatrixReport).not.toHaveBeenCalled()
   })
 
   it('useExpiryWaste is disabled without date range', () => {

@@ -35,12 +35,12 @@ import {
 
 const mockMutateAsync = vi.fn()
 
-function createMockMutation(overrides?: Partial<ReturnType<typeof useCreateNotificationChannelConfig>>) {
+function createMockMutation<T>(overrides?: Partial<T>): T {
   return {
     mutateAsync: mockMutateAsync,
     isPending: false,
     ...overrides,
-  } as unknown as ReturnType<typeof useCreateNotificationChannelConfig>
+  } as unknown as T
 }
 
 function createConfigs(): NotificationChannelConfig[] {
@@ -75,9 +75,9 @@ describe('NotificationChannelPage', () => {
       data: createConfigs(),
       isLoading: false,
     } as ReturnType<typeof useNotificationChannelConfigs>)
-    vi.mocked(useCreateNotificationChannelConfig).mockReturnValue(createMockMutation())
-    vi.mocked(useUpdateNotificationChannelConfig).mockReturnValue(createMockMutation())
-    vi.mocked(useDeleteNotificationChannelConfig).mockReturnValue(createMockMutation())
+    vi.mocked(useCreateNotificationChannelConfig).mockReturnValue(createMockMutation<ReturnType<typeof useCreateNotificationChannelConfig>>())
+    vi.mocked(useUpdateNotificationChannelConfig).mockReturnValue(createMockMutation<ReturnType<typeof useUpdateNotificationChannelConfig>>())
+    vi.mocked(useDeleteNotificationChannelConfig).mockReturnValue(createMockMutation<ReturnType<typeof useDeleteNotificationChannelConfig>>())
     vi.mocked(useTestWebhook).mockReturnValue({
       mutateAsync: vi.fn().mockResolvedValue({ success: true, message: 'OK', providerType: 'SLACK' }),
       isPending: false,
@@ -106,7 +106,7 @@ describe('NotificationChannelPage', () => {
     vi.mocked(useNotificationChannelConfigs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useNotificationChannelConfigs>)
+    } as unknown as ReturnType<typeof useNotificationChannelConfigs>)
     render(<NotificationChannelPage />)
     const btn = screen.getByText('새 설정')
     expect(btn).toBeDisabled()
@@ -130,7 +130,7 @@ describe('NotificationChannelPage', () => {
     render(<NotificationChannelPage />)
     fireEvent.change(screen.getByLabelText('센터 선택'), { target: { value: '1' } })
     fireEvent.click(screen.getByText('새 설정'))
-    const form = screen.getByText('새 채널 설정').closest('form')!
+    const form = screen.getByRole('form', { name: '새 채널 설정 폼' })
     fireEvent.submit(form)
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalled()

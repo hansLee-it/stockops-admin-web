@@ -7,7 +7,7 @@
  * @since 2.0
  */
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import type { AbcXyzMatrixCell } from '@/types/analytics'
 import { X } from 'lucide-react'
 
@@ -53,8 +53,8 @@ export function AbcXyzMatrix({ cells }: AbcXyzMatrixProps) {
 
           {/* Matrix rows */}
           {ABC_CLASSES.map((abc) => (
-            <>
-              <div key={`${abc}-label`} className="flex items-center justify-center text-sm font-bold text-text-primary">
+            <Fragment key={abc}>
+              <div className="flex items-center justify-center text-sm font-bold text-text-primary">
                 {abc}
               </div>
               {XYZ_CLASSES.map((xyz) => {
@@ -71,7 +71,7 @@ export function AbcXyzMatrix({ cells }: AbcXyzMatrixProps) {
                   </button>
                 )
               })}
-            </>
+            </Fragment>
           ))}
         </div>
         <div className="mt-4 flex items-center gap-4 text-xs text-text-secondary">
@@ -100,6 +100,7 @@ export function AbcXyzMatrix({ cells }: AbcXyzMatrixProps) {
               <button
                 type="button"
                 onClick={() => setSelectedCell(null)}
+                aria-label="닫기"
                 className="p-1 hover:bg-neutral-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-text-secondary" />

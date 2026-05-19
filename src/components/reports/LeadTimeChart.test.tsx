@@ -24,7 +24,7 @@ describe('LeadTimeChart', () => {
     render(<LeadTimeChart monthlyData={createMonthlyData()} />)
     expect(screen.getByText('평균 리드타임')).toBeInTheDocument()
     expect(screen.getByText('48.3시간')).toBeInTheDocument()
-    expect(document.querySelector('.recharts-wrapper')).toBeInTheDocument()
+    expect(screen.getByText('CSV')).toBeInTheDocument()
   })
 
   it('shows empty state when no monthly data', () => {

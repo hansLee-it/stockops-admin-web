@@ -67,7 +67,7 @@ export function useAbcAnalysis(centerId?: number, enabled = true): UseQueryResul
     queryKey: ['reports', 'abc-analysis', centerId],
     queryFn: () => getAbcAnalysisReport(centerId),
     staleTime: REPORT_STALE_TIME,
-    enabled,
+    enabled: enabled && centerId !== undefined,
   })
 }
 
@@ -82,7 +82,7 @@ export function useXyzAnalysis(centerId?: number, enabled = true): UseQueryResul
     queryKey: ['reports', 'xyz-analysis', centerId],
     queryFn: () => getXyzAnalysisReport(centerId),
     staleTime: REPORT_STALE_TIME,
-    enabled,
+    enabled: enabled && centerId !== undefined,
   })
 }
 
@@ -97,7 +97,7 @@ export function useAbcXyzMatrix(centerId?: number, enabled = true): UseQueryResu
     queryKey: ['reports', 'abc-xyz-matrix', centerId],
     queryFn: () => getAbcXyzMatrixReport(centerId),
     staleTime: REPORT_STALE_TIME,
-    enabled,
+    enabled: enabled && centerId !== undefined,
   })
 }
 

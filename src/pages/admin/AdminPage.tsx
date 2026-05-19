@@ -14,18 +14,23 @@ interface NoticeDTO {
 export function AdminPage() {
   const [notices, setNotices] = useState<NoticeDTO[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const fetchActiveNotices = useCallback(async () => {
     try {
-      const res = await api.get<NoticeDTO[]>('/notices/active')
-      setNotices(res.data)
-    } catch (e) {
-      }
+      setError('')
+      const res = await api.get<NoticeDTO[]>('/v1/notices/active')
+      setNotices(Array.isArray(res.data) ? res.data : [])
+    } catch {
+      setError('공지 현황을 불러오지 못했습니다.')
+    }
   }, [])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setLoading(true)
-    fetchActiveNotices().finally(() => setLoading(false))
+    void fetchActiveNotices().finally(() => setLoading(false))
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [fetchActiveNotices])
 
   return (
@@ -35,6 +40,11 @@ export function AdminPage() {
         <div className="flex items-center gap-2 text-neutral-500">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600" />
           <span className="text-sm">로딩 중...</span>
+        </div>
+      )}
+      {error && (
+        <div className="rounded-lg bg-warning/10 px-4 py-3 text-sm text-warning">
+          {error}
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

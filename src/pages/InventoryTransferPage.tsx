@@ -53,7 +53,7 @@ export function InventoryTransferPage() {
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
 
-  const { data: transfers, isLoading, error } = useInventoryTransfers()
+  const { data: transfers, isLoading, error, refetch } = useInventoryTransfers()
   const { data: products } = useProducts()
   const { data: locations } = useLocations()
 
@@ -91,7 +91,7 @@ export function InventoryTransferPage() {
         description={error.message}
         variant="error"
         actionLabel="다시 시도"
-        onAction={() => window.location.reload()}
+        onAction={() => void refetch()}
       />
     )
   }
@@ -122,7 +122,7 @@ export function InventoryTransferPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">수량</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">상태</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">요청일</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">작업</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-neutral-200">

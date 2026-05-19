@@ -9,7 +9,7 @@
 import { useState, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Plus, Eye, Check, Package, ScanBarcode, Download, Upload, ChevronLeft, ChevronRight, WifiOff, RefreshCw, Database } from 'lucide-react'
-import { useInbounds, useInboundItems, useCreateInbound, useAddInboundItem, useConfirmInbound } from '@/hooks/useInbound'
+import { useInbounds, useInboundItems, useAddInboundItem, useConfirmInbound } from '@/hooks/useInbound'
 import { useProducts } from '@/hooks/useProduct'
 import { useLocations } from '@/hooks/useLocation'
 import { useCenters } from '@/hooks/useCenter'
@@ -23,6 +23,16 @@ import { downloadExcelTemplate } from '@/api/excel'
 import type { Inbound, InboundStatus } from '@/types/inbound'
 import type { Location } from '@/types/location'
 import { EmptyState } from '@/components/common/EmptyState'
+import { CreateInboundModal } from '@/components/inbound/CreateInboundModal'
+
+const INBOUND_STATUS_LABELS: Record<InboundStatus, string> = {
+  DRAFT: '검수 대기',
+  CONFIRMED: '입고 확정',
+}
+
+function getInboundStatusLabel(status: InboundStatus): string {
+  return INBOUND_STATUS_LABELS[status] ?? status
+}
 
 /**
  * Inbound management page with table, filters, and modals.
@@ -41,7 +51,7 @@ export function InboundPage() {
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
 
-  const { data: inbounds, isLoading, error } = useInbounds(statusFilter || undefined)
+  const { data: inbounds, isLoading, error, refetch } = useInbounds(statusFilter || undefined)
   const { isOnline, pendingCount, isSyncing, syncPending } = useOfflineInbound()
 
   const paginatedInbounds = useMemo(() => {
@@ -62,7 +72,7 @@ export function InboundPage() {
         description={error.message}
         variant="error"
         actionLabel="다시 시도"
-        onAction={() => window.location.reload()}
+        onAction={() => void refetch()}
       />
     )
   }
@@ -139,8 +149,8 @@ export function InboundPage() {
           className="w-full sm:w-auto px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           <option value="">전체 상태</option>
-          <option value="DRAFT">임시저장</option>
-          <option value="CONFIRMED">확정</option>
+          <option value="DRAFT">검수 대기</option>
+          <option value="CONFIRMED">입고 확정</option>
         </select>
       </div>
 
@@ -156,7 +166,7 @@ export function InboundPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">공급처</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">상태</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">총 수량</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">작업</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
@@ -171,7 +181,7 @@ export function InboundPage() {
                             ? 'bg-success/10 text-success'
                             : 'bg-warning/10 text-warning'
                         }`}>
-                          {inbound.status}
+                          {getInboundStatusLabel(inbound.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{inbound.totalQuantity}</td>
@@ -184,7 +194,8 @@ export function InboundPage() {
                               setShowDetailModal(true)
                             }}
                             className="text-primary-600 hover:text-primary-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                            title="View Details"
+                            title="상세 보기"
+                            aria-label={`입고 ${inbound.id} 상세 보기`}
                           >
                             <Eye className="w-5 h-5" />
                           </button>
@@ -197,7 +208,8 @@ export function InboundPage() {
                                   setShowAddItemModal(true)
                                 }}
                                 className="text-primary-600 hover:text-primary-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                                title="Add Item"
+                                title="품목 추가"
+                                aria-label={`입고 ${inbound.id} 품목 추가`}
                               >
                                 <Package className="w-5 h-5" />
                               </button>
@@ -208,7 +220,8 @@ export function InboundPage() {
                                   setShowDetailModal(true)
                                 }}
                                 className="text-success hover:text-green-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                                title="Confirm"
+                                title="입고 확정"
+                                aria-label={`입고 ${inbound.id} 확정`}
                               >
                                 <Check className="w-5 h-5" />
                               </button>
@@ -232,7 +245,7 @@ export function InboundPage() {
                         ? 'bg-success/10 text-success'
                         : 'bg-warning/10 text-warning'
                     }`}>
-                      {inbound.status}
+                      {getInboundStatusLabel(inbound.status)}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -294,9 +307,9 @@ export function InboundPage() {
           </>
         ) : (
           <EmptyState
-            title="No inbounds found"
-            description="Create your first inbound to get started"
-            actionLabel="New Inbound"
+            title="표시할 입고 건이 없습니다"
+            description="입고 등록 후 검수 품목, LOT, 유통기한, 적치 위치를 추가할 수 있습니다."
+            actionLabel="입고 등록"
             onAction={() => setShowCreateModal(true)}
           />
         )}
@@ -392,78 +405,6 @@ export function InboundPage() {
 }
 
 /**
- * Create inbound modal component.
- *
- * @param onClose - Close callback
- * @returns Modal JSX element
- */
-function CreateInboundModal({ onClose }: { onClose: () => void }) {
-  const [supplier, setSupplier] = useState('')
-  const [inboundDate, setInboundDate] = useState('')
-  const createMutation = useCreateInbound()
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    createMutation.mutate(
-      {
-        supplier,
-        inboundDate: inboundDate || undefined,
-      },
-      {
-        onSuccess: () => {
-          onClose()
-        },
-      }
-    )
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold text-neutral-900 mb-4">Create New Inbound</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Supplier</label>
-            <input
-              type="text"
-              value={supplier}
-              onChange={(e) => setSupplier(e.target.value)}
-              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter supplier name"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Inbound Date</label>
-            <input
-              type="date"
-              value={inboundDate}
-              onChange={(e) => setInboundDate(e.target.value)}
-              className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 min-h-[44px] text-neutral-600 hover:text-neutral-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={createMutation.isPending}
-              className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
-            >
-              {createMutation.isPending ? 'Creating...' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-/**
  * Inbound detail modal component.
  *
  * @param inbound - Inbound data
@@ -488,7 +429,7 @@ function InboundDetailModal({ inbound, onClose }: { inbound: Inbound; onClose: (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-neutral-900">Inbound #{inbound.id}</h2>
+          <h2 className="text-xl font-bold text-neutral-900">입고 #{inbound.id}</h2>
           <button onClick={onClose} type="button" className="text-neutral-500 hover:text-neutral-700">
             &times;
           </button>
@@ -496,41 +437,41 @@ function InboundDetailModal({ inbound, onClose }: { inbound: Inbound; onClose: (
 
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
-            <span className="text-sm text-neutral-500">Date:</span>
+            <span className="text-sm text-neutral-500">입고일:</span>
             <span className="ml-2 text-neutral-900">{inbound.inboundDate}</span>
           </div>
           <div>
-            <span className="text-sm text-neutral-500">Supplier:</span>
+            <span className="text-sm text-neutral-500">공급처:</span>
             <span className="ml-2 text-neutral-900">{inbound.supplier || '-'}</span>
           </div>
           <div>
-            <span className="text-sm text-neutral-500">Status:</span>
+            <span className="text-sm text-neutral-500">상태:</span>
             <span className={`ml-2 px-2 py-1 text-xs font-medium rounded ${
               inbound.status === 'CONFIRMED' 
                 ? 'bg-success/10 text-success' 
                 : 'bg-warning/10 text-warning'
             }`}>
-              {inbound.status}
+              {getInboundStatusLabel(inbound.status)}
             </span>
           </div>
           <div>
-            <span className="text-sm text-neutral-500">Total Quantity:</span>
+            <span className="text-sm text-neutral-500">총 수량:</span>
             <span className="ml-2 text-neutral-900">{inbound.totalQuantity}</span>
           </div>
         </div>
 
-        <h3 className="text-lg font-semibold text-neutral-900 mb-2">Items</h3>
+        <h3 className="text-lg font-semibold text-neutral-900 mb-2">검수 품목</h3>
         {isLoading ? (
-          <div className="text-neutral-600">Loading items...</div>
+          <div className="text-neutral-600">품목을 불러오는 중입니다...</div>
         ) : items && items.length > 0 ? (
           <table className="min-w-full divide-y divide-neutral-200">
             <thead className="bg-neutral-50">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Product</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">상품</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">LOT</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Expiry</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Qty</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Location</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">유통기한</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">수량</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">위치</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
@@ -546,7 +487,7 @@ function InboundDetailModal({ inbound, onClose }: { inbound: Inbound; onClose: (
             </tbody>
           </table>
         ) : (
-          <div className="text-neutral-500">No items added yet</div>
+          <div className="text-neutral-500">아직 추가된 품목이 없습니다.</div>
         )}
 
         <div className="flex justify-end gap-2 mt-4">
@@ -555,7 +496,7 @@ function InboundDetailModal({ inbound, onClose }: { inbound: Inbound; onClose: (
             type="button"
             className="px-4 py-2 text-neutral-600 hover:text-neutral-700"
           >
-            Close
+            닫기
           </button>
           {inbound.status === 'DRAFT' && items && items.length > 0 && (
             <button
@@ -564,7 +505,7 @@ function InboundDetailModal({ inbound, onClose }: { inbound: Inbound; onClose: (
               disabled={confirmMutation.isPending}
               className="px-4 py-2 bg-success text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
-              {confirmMutation.isPending ? 'Confirming...' : 'Confirm Inbound'}
+              {confirmMutation.isPending ? '확정 중...' : '입고 확정'}
             </button>
           )}
         </div>
@@ -679,7 +620,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-neutral-900">Add Item to Inbound</h2>
+          <h2 className="text-xl font-bold text-neutral-900">입고 품목 추가</h2>
           {!isOnline && (
             <span className="flex items-center gap-1 px-2 py-1 bg-error/10 text-error text-xs font-medium rounded">
               <WifiOff className="w-3 h-3" />
@@ -689,7 +630,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Product</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">상품</label>
             {!showScanner ? (
               <>
                 <ProductSelectDropdown
@@ -738,18 +679,18 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
             )}
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">LOT Number</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">LOT 번호</label>
             <input
               type="text"
               value={lotNumber}
               onChange={(e) => setLotNumber(e.target.value)}
               className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter LOT number"
+              placeholder="LOT 번호를 입력하세요"
               required
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Expiry Date</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">유통기한</label>
             <input
               type="date"
               value={expiryDate}
@@ -758,19 +699,19 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Quantity</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">수량</label>
             <input
               type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter quantity"
+              placeholder="수량을 입력하세요"
               min="1"
               required
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Center</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">센터</label>
             <select
               value={centerId}
               onChange={(e) => {
@@ -780,7 +721,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
               className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               required={!isOnline}
             >
-              <option value="">Select Center</option>
+              <option value="">센터 선택</option>
               {centers?.map((center) => (
                 <option key={center.id} value={center.id}>
                   {center.code} - {center.name}
@@ -789,7 +730,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
             </select>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Warehouse</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">창고</label>
             <select
               value={warehouseId}
               onChange={(e) => setWarehouseId(e.target.value)}
@@ -797,7 +738,7 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
               required={!isOnline}
               disabled={!centerId}
             >
-              <option value="">Select Warehouse</option>
+              <option value="">창고 선택</option>
               {warehouses?.map((warehouse) => (
                 <option key={warehouse.id} value={warehouse.id}>
                   {warehouse.code} - {warehouse.name}
@@ -806,14 +747,14 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
             </select>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Location</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">적치 위치</label>
             <select
               value={locationId}
               onChange={(e) => setLocationId(e.target.value)}
               className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
             >
-              <option value="">Select Location</option>
+              <option value="">위치 선택</option>
               {locations?.map((location: Location) => (
                 <option key={location.id} value={location.id}>
                   {location.code} - {location.name}
@@ -827,14 +768,14 @@ function AddItemModal({ inboundId, onClose }: { inboundId: number; onClose: () =
               onClick={onClose}
               className="px-4 py-2 min-h-[44px] text-neutral-600 hover:text-neutral-700"
             >
-              Cancel
+              취소
             </button>
             <button
               type="submit"
               disabled={addItemMutation.isPending}
               className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
-              {addItemMutation.isPending ? 'Adding...' : 'Add Item'}
+              {addItemMutation.isPending ? '추가 중...' : '품목 추가'}
             </button>
           </div>
         </form>

@@ -137,6 +137,7 @@ export function NotificationBell() {
       createdAt: payload.timestamp ?? new Date().toISOString(),
     }
 
+    /* eslint-disable react-hooks/set-state-in-effect -- websocket notification payloads are appended to the in-memory realtime feed. */
     setRealtimeNotifications((prev) => {
       const next = [notification, ...prev]
       if (next.length > MAX_REALTIME_NOTIFICATIONS) {
@@ -144,6 +145,7 @@ export function NotificationBell() {
       }
       return next
     })
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     showToast({ message: `${title}: ${message}`, variant: 'success' })
   }, [lastMessage])

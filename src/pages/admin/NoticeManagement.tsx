@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import api from '@/lib/api'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
@@ -18,36 +18,49 @@ export function NoticeManagement() {
   const [showForm, setShowForm] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
   const [formData, setFormData] = useState({ title: '', content: '', type: 'SYSTEM' })
+  const [error, setError] = useState('')
 
-  const fetchNotices = async () => {
+  const fetchNotices = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.get<NoticeDTO[]>('/notices')
-      setNotices(res.data)
-    } catch (e) {
-      } finally {
+      setError('')
+      const res = await api.get<NoticeDTO[]>('/v1/notices')
+      setNotices(Array.isArray(res.data) ? res.data : [])
+    } catch {
+      setError('공지 목록을 불러오지 못했습니다.')
+    } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    void fetchNotices()
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [fetchNotices])
 
   const handleCreate = async () => {
     try {
-      await api.post('/notices', formData)
+      setError('')
+      await api.post('/v1/notices', formData)
       setShowForm(false)
       setFormData({ title: '', content: '', type: 'SYSTEM' })
-      fetchNotices()
-    } catch (e) {
-      }
+      void fetchNotices()
+    } catch {
+      setError('공지 저장에 실패했습니다.')
+    }
   }
 
   const handleDelete = async () => {
     if (deleteTarget === null) return
     try {
-      await api.delete(`/notices/${deleteTarget}`)
+      setError('')
+      await api.delete(`/v1/notices/${deleteTarget}`)
       setDeleteTarget(null)
-      fetchNotices()
-    } catch (e) {
-      }
+      void fetchNotices()
+    } catch {
+      setError('공지 삭제에 실패했습니다.')
+    }
   }
 
   return (
@@ -68,6 +81,11 @@ export function NoticeManagement() {
         <div className="flex items-center gap-2 text-neutral-500 py-4">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600" />
           <span className="text-sm">로딩 중...</span>
+        </div>
+      )}
+      {error && (
+        <div className="rounded-lg bg-error/10 px-4 py-3 text-sm text-error">
+          {error}
         </div>
       )}
 
@@ -114,7 +132,7 @@ export function NoticeManagement() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">新規 공지 작성</h2>
+            <h2 className="text-lg font-semibold mb-4">새 공지 작성</h2>
             <div className="space-y-4">
               <div>
                 <label htmlFor="notice-title" className="block text-sm font-medium text-neutral-700 mb-1">제목</label>

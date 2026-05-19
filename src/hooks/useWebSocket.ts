@@ -22,12 +22,20 @@ const MAX_RETRIES = 5
 const BASE_DELAY_MS = 1000
 
 function getWebSocketUrl(): string {
-  const apiBase = import.meta.env.VITE_API_BASE_URL || ''
-  if (apiBase.startsWith('http')) {
-    return apiBase.replace(/^http/, 'ws') + '/ws'
-  }
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}/ws`
+  const apiBase = import.meta.env.VITE_API_BASE_URL || ''
+
+  if (!apiBase) {
+    return `${protocol}//${window.location.host}/ws`
+  }
+
+  const baseUrl = new URL(apiBase, window.location.origin)
+  baseUrl.protocol = baseUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+  baseUrl.pathname = baseUrl.pathname.replace(/\/api\/?$/, '') + '/ws'
+  baseUrl.search = ''
+  baseUrl.hash = ''
+
+  return baseUrl.toString()
 }
 
 /**
@@ -66,8 +74,10 @@ export function useWebSocket(topic: string): {
     isMountedRef.current = true
     const token = useAuthStore.getState().token
     if (!token) {
+      /* eslint-disable react-hooks/set-state-in-effect -- websocket setup falls back immediately when no auth token is available. */
       setConnectionStatus('fallback')
       setError(new Error('No authentication token available'))
+      /* eslint-enable react-hooks/set-state-in-effect */
       return
     }
 

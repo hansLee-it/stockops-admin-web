@@ -102,6 +102,7 @@ export function usePwaInstall(): UsePwaInstallReturn {
 
     const mql = window.matchMedia('(display-mode: standalone)')
     if (mql.matches) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect -- initializes state from the browser display-mode media query. */
       setIsStandalone(true)
     }
     mql.addEventListener?.('change', handleDisplayModeChange)

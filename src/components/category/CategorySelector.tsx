@@ -83,9 +83,11 @@ export function CategorySelector({
   useEffect(() => {
     if (value && categoryTree.length > 0) {
       const [l1, l2, l3] = findCategoryPath(categoryTree, value)
+      /* eslint-disable react-hooks/set-state-in-effect -- mirrors an externally controlled category value into the three-level picker state. */
       setLevel1(l1)
       setLevel2(l2)
       setLevel3(l3)
+      /* eslint-enable react-hooks/set-state-in-effect */
     } else if (!value) {
       setLevel1(null)
       setLevel2(null)

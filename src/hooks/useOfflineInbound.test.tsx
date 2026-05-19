@@ -39,7 +39,7 @@ function createWrapper() {
 describe('useOfflineInbound', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    Object.defineProperty(global.navigator, 'onLine', {
+    Object.defineProperty(window.navigator, 'onLine', {
       writable: true,
       configurable: true,
       value: true,
@@ -90,7 +90,7 @@ describe('useOfflineInbound', () => {
   })
 
   it('does not sync when offline', async () => {
-    Object.defineProperty(global.navigator, 'onLine', { value: false, writable: true, configurable: true })
+    Object.defineProperty(window.navigator, 'onLine', { value: false, writable: true, configurable: true })
     vi.mocked(offlineStorage.countPending).mockResolvedValue(0)
 
     const { result } = renderHook(() => useOfflineInbound(), { wrapper: createWrapper() })

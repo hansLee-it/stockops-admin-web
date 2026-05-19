@@ -9,16 +9,21 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useDashboardSummary, useDashboardTransactions } from '@/hooks/useDashboard'
 import { useEnvironmentDashboard } from '@/hooks/useEnvironment'
+import { createProduct } from '@/api/products'
+import { ProductModal } from '@/components/products/ProductModal'
+import { CreateInboundModal } from '@/components/inbound/CreateInboundModal'
+import { CreateOutboundModal } from '@/components/outbound/CreateOutboundModal'
 import { StatCard } from '@/components/ui/StatCard'
 import { AlertItem } from '@/components/ui/AlertItem'
 import { ActivityItem } from '@/components/ui/ActivityItem'
 import { AIBanner } from '@/components/ui/AIBanner'
 import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, Package, RefreshCw } from 'lucide-react'
+import type { CreateProductRequest, UpdateProductRequest } from '@/types/product'
 
 /**
  * Dashboard page displaying welcome message and system overview.
@@ -28,11 +33,13 @@ import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, Package, RefreshCw } f
  * @returns Dashboard page JSX element
  */
 export function DashboardPage() {
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const queryClient = useQueryClient()
   const [now, setNow] = useState(() => Date.now())
   const [isManualRefreshing, setIsManualRefreshing] = useState(false)
-  const [isEnvironmentRefreshing, setIsEnvironmentRefreshing] = useState(false)
+  const [quickAction, setQuickAction] = useState<'inbound' | 'outbound' | 'product' | null>(null)
+  const [isProductSubmitting, setIsProductSubmitting] = useState(false)
   const {
     data: summary,
     refetch: refetchSummary,
@@ -84,20 +91,6 @@ export function DashboardPage() {
     }
   }
 
-  async function handleEnvironmentRefresh(event: React.MouseEvent<HTMLButtonElement>): Promise<void> {
-    event.preventDefault()
-    event.stopPropagation()
-
-    setIsEnvironmentRefreshing(true)
-
-    try {
-      await queryClient.invalidateQueries({ queryKey: ['environment', 'dashboard'] })
-    }
-    finally {
-      setIsEnvironmentRefreshing(false)
-    }
-  }
-
   const hasEnvironmentAlert =
     (environmentDashboardQuery.data?.warningCount ?? 0) > 0 ||
     (environmentDashboardQuery.data?.dangerCount ?? 0) > 0
@@ -109,6 +102,27 @@ export function DashboardPage() {
       : (environmentDashboardQuery.data?.warningCount ?? 0) > 0
         ? 'warning'
         : 'success'
+
+  const canShowAiRecommendation =
+    (summary?.totalProducts ?? 0) > 0 &&
+    (summary?.recentTransactionCount ?? 0) > 0
+
+  const aiDescription = canShowAiRecommendation
+    ? '최근 입출고 이력과 안전재고 기준으로 발주 후보를 검토하세요. 상세 화면에서 모델 근거와 추천 수량을 확인할 수 있습니다.'
+    : '추천을 만들 만큼 입출고 이력이 충분하지 않습니다. 상품, 입고, 출고 데이터가 쌓이면 자동 발주 후보를 표시합니다.'
+
+  async function handleProductSubmit(data: CreateProductRequest | UpdateProductRequest): Promise<void> {
+    setIsProductSubmitting(true)
+
+    try {
+      await createProduct(data as CreateProductRequest)
+      await queryClient.invalidateQueries({ queryKey: ['products'] })
+      setQuickAction(null)
+    }
+    finally {
+      setIsProductSubmitting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -135,19 +149,23 @@ export function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon="📦"
-          label="전체 품목"
-          value={summary?.totalProducts ?? 0}
-          variant="default"
-        />
-        <StatCard
-          icon="⚠️"
-          label="유통기한 임박"
-          value={summary?.criticalExpiryCount ?? 0}
-          change="3일 이내"
-          variant="warning"
-        />
+        <Link to="/products" className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+          <StatCard
+            icon="📦"
+            label="전체 품목"
+            value={summary?.totalProducts ?? 0}
+            variant="default"
+          />
+        </Link>
+        <Link to="/expiry" className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+          <StatCard
+            icon="⚠️"
+            label="유통기한 임박"
+            value={summary?.criticalExpiryCount ?? 0}
+            change="3일 이내"
+            variant="warning"
+          />
+        </Link>
         <div className="relative rounded-xl">
           <Link to="/environment" className="absolute inset-0 z-0 rounded-xl" aria-label="환경 페이지로 이동" />
           <div className="relative z-10 rounded-xl">
@@ -160,16 +178,6 @@ export function DashboardPage() {
                 이상 감지
               </Link>
             ) : null}
-            <button
-              type="button"
-              onClick={(event) => {
-                void handleEnvironmentRefresh(event)
-              }}
-              className="absolute bottom-3 right-3 z-10 rounded-full border border-neutral-200 bg-white p-2 text-text-secondary hover:bg-neutral-50"
-              aria-label="환경 카드 새로고침"
-            >
-              <RefreshCw className={`h-4 w-4 ${isEnvironmentRefreshing ? 'animate-spin' : ''}`} />
-            </button>
             {environmentDashboardQuery.isLoading ? (
               <div className="flex items-center gap-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm animate-pulse">
                 <div className="h-12 w-12 rounded-full bg-neutral-200" />
@@ -206,40 +214,45 @@ export function DashboardPage() {
             )}
           </div>
         </div>
-        <StatCard
-          icon="📊"
-          label="오늘 입출고"
-          value={`${summary?.todayInboundCount ?? 0} / ${summary?.todayOutboundCount ?? 0}`}
-          change="입고 / 출고"
-          variant="default"
-        />
+        <Link to="/inbound" className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+          <StatCard
+            icon="📊"
+            label="오늘 입출고"
+            value={`${summary?.todayInboundCount ?? 0} / ${summary?.todayOutboundCount ?? 0}`}
+            change="입고 / 출고"
+            variant="default"
+          />
+        </Link>
       </div>
 
       {/* Quick Actions */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-neutral-200">
         <h2 className="text-lg font-semibold mb-4 text-text-primary">빠른 작업</h2>
         <div className="flex flex-wrap gap-3">
-          <Link
-            to="/inbound"
+          <button
+            type="button"
+            onClick={() => setQuickAction('inbound')}
             className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
           >
             <ArrowDownToLine className="w-5 h-5" />
             입고 등록
-          </Link>
-          <Link
-            to="/outbound"
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuickAction('outbound')}
             className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
           >
             <ArrowUpFromLine className="w-5 h-5" />
             출고 등록
-          </Link>
-          <Link
-            to="/inventory"
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuickAction('product')}
             className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] bg-neutral-100 text-text-primary border border-neutral-200 rounded-lg hover:bg-neutral-200 transition-colors font-medium"
           >
             <Package className="w-5 h-5" />
             상품 등록
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -275,9 +288,9 @@ export function DashboardPage() {
       {/* AI Banner */}
       <AIBanner
         title="AI 추천"
-        description="다음 주 주말 매출 증가 예상 (15%). 생수, 과자류 안전재고를 늘리는 것을 추천합니다."
-        actionLabel="자동 발주"
-        onAction={() => {}}
+        description={aiDescription}
+        actionLabel={canShowAiRecommendation ? '추천 검토' : undefined}
+        onAction={() => navigate('/ai')}
       />
 
       {/* Recent Activity */}
@@ -299,6 +312,27 @@ export function DashboardPage() {
           <p className="text-text-secondary text-center py-8">최근 활동이 없습니다</p>
         )}
       </div>
+
+      {quickAction === 'inbound' && (
+        <CreateInboundModal onClose={() => setQuickAction(null)} />
+      )}
+
+      {quickAction === 'outbound' && (
+        <CreateOutboundModal
+          onClose={() => setQuickAction(null)}
+          onSuccess={() => {
+            setQuickAction(null)
+            queryClient.invalidateQueries({ queryKey: ['outbounds'] })
+          }}
+        />
+      )}
+
+      <ProductModal
+        isOpen={quickAction === 'product'}
+        onClose={() => setQuickAction(null)}
+        onSubmit={handleProductSubmit}
+        isLoading={isProductSubmitting}
+      />
     </div>
   )
 }

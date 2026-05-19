@@ -10,6 +10,10 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useEffect, useState } from 'react'
 
+function isAdminRole(role: string | undefined): boolean {
+  return role === 'ADMIN' || role === 'ROLE_ADMIN' || role === 'SYSTEM_ADMIN'
+}
+
 /**
  * Props for ProtectedRoute component.
  */
@@ -56,7 +60,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   const adminPaths = ['/admin', '/admin/notices', '/admin/audit-logs']
-  if (adminPaths.some((path) => location.pathname === path) && user?.role !== 'ADMIN') {
+  if (adminPaths.some((path) => location.pathname === path) && !isAdminRole(user?.role)) {
     return <Navigate to="/dashboard" replace />
   }
 

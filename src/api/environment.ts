@@ -19,11 +19,36 @@ import type {
   SensorHistory,
 } from '@/types/environment'
 
+function emptyPageResponse<T>(page = 0, size = 20): PageResponse<T> {
+  return {
+    content: [],
+    totalElements: 0,
+    totalPages: 0,
+    size,
+    number: page,
+  }
+}
+
+function normalizePageResponse<T>(data: PageResponse<T>, page = 0, size = 20): PageResponse<T> {
+  if (!data || !Array.isArray(data.content)) {
+    return emptyPageResponse<T>(page, size)
+  }
+
+  return {
+    ...data,
+    content: data.content,
+    totalElements: data.totalElements ?? data.content.length,
+    totalPages: data.totalPages ?? 1,
+    size: data.size ?? size,
+    number: data.number ?? page,
+  }
+}
+
 export async function getSensors(page = 0, size = 20): Promise<PageResponse<SensorDevice>> {
   const response = await api.get<PageResponse<SensorDevice>>('/v1/environment/sensors', {
     params: { page, size },
   })
-  return response.data
+  return normalizePageResponse(response.data, page, size)
 }
 
 export async function getSensorById(id: number): Promise<SensorDevice> {
@@ -59,7 +84,7 @@ export async function getControllers(page = 0, size = 20): Promise<PageResponse<
   const response = await api.get<PageResponse<EnvironmentController>>('/v1/environment/controllers', {
     params: { page, size },
   })
-  return response.data
+  return normalizePageResponse(response.data, page, size)
 }
 
 export async function getControllerById(id: number): Promise<EnvironmentController> {
@@ -103,7 +128,7 @@ export async function getControllerCommands(controllerId: number, size = 20): Pr
   const response = await api.get<ControllerCommand[]>(`/v1/environment/controllers/${controllerId}/commands`, {
     params: { size },
   })
-  return response.data
+  return Array.isArray(response.data) ? response.data : []
 }
 
 export async function sendControllerCommand(
@@ -116,19 +141,26 @@ export async function sendControllerCommand(
 
 export async function getEnvironmentDashboard(): Promise<DashboardResponse> {
   const response = await api.get<DashboardResponse>('/v1/environment/dashboard')
-  return response.data
+  return {
+    totalSensors: response.data?.totalSensors ?? 0,
+    activeSensors: response.data?.activeSensors ?? 0,
+    normalCount: response.data?.normalCount ?? 0,
+    warningCount: response.data?.warningCount ?? 0,
+    dangerCount: response.data?.dangerCount ?? 0,
+    latestReadings: Array.isArray(response.data?.latestReadings) ? response.data.latestReadings : [],
+  }
 }
 
 export async function getEnvironmentAlerts(days = 30): Promise<SensorAlert[]> {
   const response = await api.get<SensorAlert[]>('/v1/environment/alerts', {
     params: { days },
   })
-  return response.data
+  return Array.isArray(response.data) ? response.data : []
 }
 
 export async function getSensorHistory(sensorId: number, days = 30): Promise<SensorHistory[]> {
   const response = await api.get<SensorHistory[]>('/v1/environment/history', {
     params: { sensorId, days },
   })
-  return response.data
+  return Array.isArray(response.data) ? response.data : []
 }

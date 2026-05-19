@@ -59,6 +59,7 @@ export function OfflineInboundQueue({
 
   useEffect(() => {
     if (isOpen) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect -- opening the queue modal loads persisted offline rows into local view state. */
       void loadItems()
     }
   }, [isOpen, loadItems])
@@ -113,7 +114,7 @@ export function OfflineInboundQueue({
             type="button"
             onClick={onClose}
             className="text-neutral-400 hover:text-neutral-600 transition-colors"
-            aria-label="Close"
+            aria-label="닫기"
           >
             <X className="w-6 h-6" />
           </button>
@@ -177,7 +178,7 @@ export function OfflineInboundQueue({
                       }}
                       className="ml-3 p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
                       title="삭제"
-                      aria-label="Delete item"
+                      aria-label="대기 항목 삭제"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

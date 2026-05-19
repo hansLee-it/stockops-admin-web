@@ -25,11 +25,13 @@ export function InstallPrompt() {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- derived visibility is synchronized from browser installability signals. */
     if ((isInstallable || isIos) && !isStandalone && !isDismissed) {
       setIsVisible(true)
     } else {
       setIsVisible(false)
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [isInstallable, isIos, isStandalone, isDismissed])
 
   const handleDismiss = () => {

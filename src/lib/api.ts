@@ -16,8 +16,7 @@ import { useAuthStore } from '@/stores/authStore'
  * Base URL is configurable via VITE_API_BASE_URL environment variable.
  */
 export const api = axios.create({
-  // Use relative path so nginx proxy handles API requests
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
   headers: {
     'Content-Type': 'application/json',
   },

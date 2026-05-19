@@ -156,6 +156,7 @@ export function EnvironmentPage() {
     const sensor = sensors.find((s) => s.sensorId === payload.sensorId)
     if (!sensor) return
 
+    /* eslint-disable react-hooks/set-state-in-effect -- realtime sensor payloads update the live readings cache. */
     setLiveReadings((prev) => {
       const next = new Map(prev)
       next.set(sensor.id, {
@@ -171,6 +172,7 @@ export function EnvironmentPage() {
       })
       return next
     })
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [lastMessage, sensors])
 
   const mergedLatestReadings = useMemo(() => {

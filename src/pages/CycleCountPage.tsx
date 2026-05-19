@@ -10,6 +10,7 @@ import { useState, useMemo } from 'react'
 import { Plus, Eye, Play, CheckCircle } from 'lucide-react'
 import {
   useCreateCycleCount,
+  useCycleCounts,
   useStartCycleCount,
   useCompleteCycleCount,
 } from '@/hooks/useCycleCount'
@@ -24,11 +25,11 @@ import type { CycleCount, CycleCountStatus } from '@/types/cycleCount'
  * @returns Cycle count page JSX element
  */
 export function CycleCountPage() {
-  const [counts, setCounts] = useState<CycleCount[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedCountId, setSelectedCountId] = useState<number | null>(null)
   const [showExecuteModal, setShowExecuteModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const { data: counts = [], isLoading, error, refetch } = useCycleCounts()
 
   const selectedCount = useMemo(
     () => counts.find((c) => c.id === selectedCountId) || null,
@@ -48,18 +49,13 @@ export function CycleCountPage() {
     return map
   }, [locations])
 
-  const handleCreated = (count: CycleCount) => {
-    setCounts((prev) => [count, ...prev])
-  }
-
   const handleStarted = (count: CycleCount) => {
-    setCounts((prev) => prev.map((c) => (c.id === count.id ? count : c)))
     setSelectedCountId(count.id)
     setShowExecuteModal(true)
   }
 
   const handleCompleted = (count: CycleCount) => {
-    setCounts((prev) => prev.map((c) => (c.id === count.id ? count : c)))
+    setSelectedCountId(count.id)
   }
 
   const handleStart = (count: CycleCount) => {
@@ -106,7 +102,21 @@ export function CycleCountPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        {counts.length > 0 ? (
+        {isLoading ? (
+          <EmptyState
+            title="실사 로딩 중"
+            description="등록된 재고 실사 목록을 불러오는 중입니다."
+            variant="empty"
+          />
+        ) : error ? (
+          <EmptyState
+            title="실사 목록을 불러오지 못했습니다"
+            description="서버 연결 상태를 확인한 뒤 다시 시도해주세요."
+            variant="error"
+            actionLabel="다시 시도"
+            onAction={() => void refetch()}
+          />
+        ) : counts.length > 0 ? (
           <table className="min-w-full divide-y divide-neutral-200">
             <thead className="bg-neutral-50">
               <tr>
@@ -206,7 +216,6 @@ export function CycleCountPage() {
       {showCreateModal && (
         <CreateCycleCountModal
           onClose={() => setShowCreateModal(false)}
-          onCreated={handleCreated}
         />
       )}
 
@@ -243,10 +252,8 @@ export function CycleCountPage() {
  */
 function CreateCycleCountModal({
   onClose,
-  onCreated,
 }: {
   onClose: () => void
-  onCreated: (count: CycleCount) => void
 }) {
   const [countDate, setCountDate] = useState(() => new Date().toISOString().split('T')[0])
   const [locationId, setLocationId] = useState('')
@@ -291,8 +298,7 @@ function CreateCycleCountModal({
         inventoryIds: Array.from(selectedInventoryIds),
       },
       {
-        onSuccess: (data) => {
-          onCreated(data)
+        onSuccess: () => {
           onClose()
         },
       }

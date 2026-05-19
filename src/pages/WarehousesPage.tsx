@@ -41,6 +41,7 @@ export function WarehousesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingWarehouse, setEditingWarehouse] = useState<WarehouseItem | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({ open: false, id: null })
+  const [centerFilter, setCenterFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
   const [formError, setFormError] = useState("")
@@ -61,8 +62,9 @@ export function WarehousesPage() {
   const fetchCenters = useCallback(async () => {
     try {
       const response = await api.get('/v1/centers')
-      setCenters(response.data)
+      setCenters(Array.isArray(response.data) ? response.data : [])
     } catch {
+      setCenters([])
     }
   }, [])
 
@@ -80,8 +82,10 @@ export function WarehousesPage() {
   }, [])
 
   useEffect(() => {
-    fetchCenters()
-    fetchWarehouses()
+    /* eslint-disable react-hooks/set-state-in-effect */
+    void fetchCenters()
+    void fetchWarehouses()
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [fetchCenters, fetchWarehouses])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,8 +121,9 @@ export function WarehousesPage() {
   const handleDelete = async (id: number) => {
     try {
       await api.delete(`/v1/warehouses/${id}`)
-      fetchWarehouses()
-    } catch (error) {
+      void fetchWarehouses()
+    } catch {
+      setError('창고 삭제에 실패했습니다.')
     } finally {
       setDeleteConfirm({ open: false, id: null })
     }
@@ -136,12 +141,14 @@ export function WarehousesPage() {
       setShowCloseConfirm(false)
       setCloseTargetId(null)
       setCloseReason('')
-      fetchWarehouses()
-    } catch (error) {
+      void fetchWarehouses()
+    } catch {
+      setError('창고 폐쇄에 실패했습니다.')
     }
   }
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (canCloseData && closeTargetId !== null) {
       if (canCloseData.canClose) {
         setShowCloseConfirm(true)
@@ -149,14 +156,26 @@ export function WarehousesPage() {
         setShowCloseBlock(true)
       }
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [canCloseData, closeTargetId])
+
+  const filteredWarehouses = useMemo(() => {
+    if (!centerFilter) {
+      return warehouses
+    }
+
+    return warehouses.filter((warehouse) => {
+      const centerId = warehouse.center?.id ?? warehouse.centerId
+      return centerId === Number(centerFilter)
+    })
+  }, [warehouses, centerFilter])
 
   const paginatedWarehouses = useMemo(() => {
     const start = currentPage * pageSize
-    return warehouses.slice(start, start + pageSize)
-  }, [warehouses, currentPage])
+    return filteredWarehouses.slice(start, start + pageSize)
+  }, [filteredWarehouses, currentPage])
 
-  const totalPages = Math.ceil(warehouses.length / pageSize)
+  const totalPages = Math.ceil(filteredWarehouses.length / pageSize)
 
   function formatDateTime(value?: string): string {
     if (!value) return '-'
@@ -181,6 +200,28 @@ export function WarehousesPage() {
         </button>
       </div>
 
+      <div className="mb-4 bg-white rounded-lg border border-neutral-200 p-4">
+        <label htmlFor="warehouse-center-filter" className="block text-sm font-medium text-neutral-700 mb-1">
+          센터 필터
+        </label>
+        <select
+          id="warehouse-center-filter"
+          value={centerFilter}
+          onChange={(event) => {
+            setCenterFilter(event.target.value)
+            setCurrentPage(0)
+          }}
+          className="w-full sm:w-72 px-3 py-2 min-h-[44px] border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">전체 센터</option>
+          {centers.map((center) => (
+            <option key={center.id} value={center.id}>
+              {center.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {loading ? (
         <EmptyState
           title="로딩 중..."
@@ -195,10 +236,10 @@ export function WarehousesPage() {
           actionLabel="다시 시도"
           onAction={() => fetchWarehouses()}
         />
-      ) : warehouses.length === 0 ? (
+      ) : filteredWarehouses.length === 0 ? (
         <EmptyState
-          title="창고가 없습니다"
-          description="첫 번째 창고를 등록하여 시작하세요"
+          title={centerFilter ? '선택한 센터의 창고가 없습니다' : '창고가 없습니다'}
+          description="센터는 창고를 묶는 기준으로 사용하며, 이 화면에서 필요한 센터로 필터링할 수 있습니다."
           actionLabel="새 창고"
           onAction={() => {
             setEditingWarehouse(null)
@@ -287,7 +328,7 @@ export function WarehousesPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-6 py-3">
               <div className="text-sm text-text-secondary">
-                총 {warehouses.length}개 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, warehouses.length)}개 표시
+                총 {filteredWarehouses.length}개 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, filteredWarehouses.length)}개 표시
               </div>
               <div className="flex gap-2">
                 <button

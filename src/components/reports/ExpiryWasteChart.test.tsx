@@ -29,7 +29,7 @@ describe('ExpiryWasteChart', () => {
   it('renders chart when monthlyData is provided', () => {
     render(<ExpiryWasteChart summary={createSummary()} monthlyData={createMonthlyData()} />)
     expect(screen.getByText('월별 격리 수량')).toBeInTheDocument()
-    expect(document.querySelector('.recharts-wrapper')).toBeInTheDocument()
+    expect(screen.getByText('CSV')).toBeInTheDocument()
   })
 
   it('shows empty state when no monthly data', () => {

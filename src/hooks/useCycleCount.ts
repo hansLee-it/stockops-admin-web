@@ -12,6 +12,28 @@ import { AxiosError } from 'axios'
 import api from '@/lib/api'
 import type { CycleCount, CreateCycleCountRequest, CompleteCycleCountRequest } from '@/types/cycleCount'
 
+function normalizeArrayResponse<T>(data: unknown): T[] {
+  if (Array.isArray(data)) {
+    return data
+  }
+
+  if (data && typeof data === 'object' && Array.isArray((data as { content?: unknown }).content)) {
+    return (data as { content: T[] }).content
+  }
+
+  return []
+}
+
+export function useCycleCounts(): UseQueryResult<CycleCount[], AxiosError> {
+  return useQuery({
+    queryKey: ['cycleCounts'],
+    queryFn: async () => {
+      const response = await api.get<CycleCount[]>('/v1/cycle-counts')
+      return normalizeArrayResponse<CycleCount>(response.data)
+    },
+  })
+}
+
 /**
  * Fetches a single cycle count by ID.
  *
@@ -69,6 +91,7 @@ export function useStartCycleCount(): UseMutationResult<CycleCount, AxiosError, 
       return response.data
     },
     onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ['cycleCounts'] })
       queryClient.invalidateQueries({ queryKey: ['cycleCount', id] })
     },
   })
@@ -94,6 +117,7 @@ export function useCompleteCycleCount(): UseMutationResult<
       return response.data
     },
     onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['cycleCounts'] })
       queryClient.invalidateQueries({ queryKey: ['cycleCount', variables.id] })
     },
   })

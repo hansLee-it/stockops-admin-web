@@ -33,6 +33,7 @@ export function StockAdjustmentPage() {
     data: pendingAdjustments,
     isLoading,
     error,
+    refetch,
   } = usePendingAdjustments()
 
   const paginatedAdjustments = useMemo(() => {
@@ -59,7 +60,7 @@ export function StockAdjustmentPage() {
         description={error.message}
         variant="error"
         actionLabel="다시 시도"
-        onAction={() => window.location.reload()}
+        onAction={() => void refetch()}
       />
     )
   }
@@ -105,7 +106,7 @@ export function StockAdjustmentPage() {
                   요청일
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  Actions
+                  작업
                 </th>
               </tr>
             </thead>

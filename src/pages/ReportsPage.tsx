@@ -84,6 +84,7 @@ export function ReportsPage() {
   const isExpiryWasteActive = activeTab === 'expiry-waste'
   const isLeadTimeActive = activeTab === 'lead-time'
   const isStockAgingActive = activeTab === 'stock-aging'
+  const requiresCenterSelection = isAbcXyzActive && centerId === undefined
 
   const turnoverQuery = useInventoryTurnover(dateFrom, dateTo, centerId, isTurnoverActive)
   const abcQuery = useAbcAnalysis(centerId, isAbcXyzActive)
@@ -102,6 +103,7 @@ export function ReportsPage() {
       case 'stock-aging': return stockAgingQuery
     }
   })()
+  const canRunActiveQuery = !requiresCenterSelection
 
   const pieData = useMemo(() => {
     if (!stockAgingQuery.data?.summary) return []
@@ -122,31 +124,31 @@ export function ReportsPage() {
 
     if (activeTab === 'turnover' && turnoverQuery.data) {
       filename = 'inventory-turnover.csv'
-      csv = 'Product,Barcode,Turnover Rate,COGS,Avg Inventory\n'
+      csv = '상품,바코드,회전율,매출원가,평균재고\n'
       csv += turnoverQuery.data.items.map((i) =>
         `"${i.productName}","${i.productBarcode}",${i.turnoverRate.toFixed(2)},${i.cogs},${i.avgInventory}`
       ).join('\n')
     } else if (activeTab === 'abc-xyz' && matrixQuery.data) {
       filename = 'abc-xyz-matrix.csv'
-      csv = 'ABC Class,XYZ Class,Product Count,Products\n'
+      csv = 'ABC 등급,XYZ 등급,상품 수,상품\n'
       csv += matrixQuery.data.cells.map((c) =>
         `"${c.abcClass}","${c.xyzClass}",${c.productCount},"${c.products.map((p) => p.productName).join('; ')}"`
       ).join('\n')
     } else if (activeTab === 'expiry-waste' && expiryWasteQuery.data) {
       filename = 'expiry-waste.csv'
-      csv = 'Product,Center,Warehouse,Quarantined Quantity,Quarantined LOT Count\n'
+      csv = '상품,센터,창고,격리 수량,격리 LOT 수\n'
       csv += expiryWasteQuery.data.rows.map((r) =>
         `"${r.productName}","${r.centerName}","${r.warehouseName}",${r.quarantinedQuantity},${r.quarantinedLotCount}`
       ).join('\n')
     } else if (activeTab === 'lead-time' && leadTimeQuery.data) {
       filename = 'lead-time.csv'
-      csv = 'Product,Center,Warehouse,PO Count,Samples,Total LT(h),Avg LT(h)\n'
+      csv = '상품,센터,창고,발주 수,샘플 수,총 리드타임(h),평균 리드타임(h)\n'
       csv += leadTimeQuery.data.rows.map((r) =>
         `"${r.productName}","${r.centerName}","${r.warehouseName}",${r.purchaseOrderCount},${r.leadTimeSampleCount},${r.totalLeadTimeHours},${r.averageLeadTimeHours}`
       ).join('\n')
     } else if (activeTab === 'stock-aging' && stockAgingQuery.data) {
       filename = 'stock-aging.csv'
-      csv = 'Product,Center,Warehouse,Available Quantity,Avg Daily Demand,Coverage Days,Aging Bucket\n'
+      csv = '상품,센터,창고,가용 수량,평균 일수요,재고 커버일,노후화 구간\n'
       csv += stockAgingQuery.data.rows.map((r) =>
         `"${r.productName}","${r.centerName}","${r.warehouseName}",${r.availableQuantity},${r.averageDailyDemand ?? ''},${r.estimatedCoverageDays ?? ''},"${r.agingBucket}"`
       ).join('\n')
@@ -176,8 +178,12 @@ export function ReportsPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => activeQuery.refetch()}
-            disabled={activeQuery.isLoading}
+            onClick={() => {
+              if (canRunActiveQuery) {
+                activeQuery.refetch()
+              }
+            }}
+            disabled={!canRunActiveQuery || activeQuery.isLoading}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors disabled:cursor-not-allowed disabled:opacity-70"
           >
             <RefreshCw className={`w-4 h-4 ${activeQuery.isLoading ? 'animate-spin' : ''}`} />
@@ -186,7 +192,7 @@ export function ReportsPage() {
           <button
             type="button"
             onClick={handleExportCsv}
-            disabled={!activeQuery.data || activeQuery.isLoading}
+            disabled={!canRunActiveQuery || !activeQuery.data || activeQuery.isLoading}
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:cursor-not-allowed disabled:opacity-70"
           >
             <Download className="w-4 h-4" />
@@ -256,7 +262,14 @@ export function ReportsPage() {
         ))}
       </div>
 
-      {activeQuery.isLoading && (
+      {requiresCenterSelection && (
+        <EmptyState
+          title="센터 선택이 필요합니다"
+          description="ABC/XYZ 분류는 센터별 수요 데이터를 기준으로 계산됩니다. 필터에서 센터를 선택해주세요."
+        />
+      )}
+
+      {!requiresCenterSelection && activeQuery.isLoading && (
         <div className="bg-white p-8 rounded-xl shadow-sm border border-neutral-200 animate-pulse">
           <div className="space-y-4">
             <div className="h-6 bg-neutral-200 rounded w-1/3" />
@@ -266,7 +279,7 @@ export function ReportsPage() {
         </div>
       )}
 
-      {activeQuery.error && (
+      {!requiresCenterSelection && activeQuery.error && (
         <EmptyState
           title="데이터를 불러오지 못했습니다"
           description="필터를 변경하거나 다시 시도해주세요."
@@ -276,11 +289,11 @@ export function ReportsPage() {
         />
       )}
 
-      {activeTab === 'turnover' && turnoverQuery.data && (
+      {!requiresCenterSelection && activeTab === 'turnover' && turnoverQuery.data && (
         <InventoryTurnoverTable items={turnoverQuery.data.items} />
       )}
 
-      {activeTab === 'abc-xyz' && matrixQuery.data && (
+      {!requiresCenterSelection && activeTab === 'abc-xyz' && matrixQuery.data && (
         <div className="space-y-6">
           <AbcXyzMatrix cells={matrixQuery.data.cells} />
           {abcQuery.data && xyzQuery.data && (
@@ -292,21 +305,21 @@ export function ReportsPage() {
         </div>
       )}
 
-      {activeTab === 'expiry-waste' && expiryWasteQuery.data && (
+      {!requiresCenterSelection && activeTab === 'expiry-waste' && expiryWasteQuery.data && (
         <ExpiryWasteChart
           summary={expiryWasteQuery.data.summary}
           monthlyData={expiryWasteQuery.data.monthlyData}
         />
       )}
 
-      {activeTab === 'lead-time' && leadTimeQuery.data && (
+      {!requiresCenterSelection && activeTab === 'lead-time' && leadTimeQuery.data && (
         <LeadTimeChart
           monthlyData={leadTimeQuery.data.monthlyData}
           suppliers={leadTimeQuery.data.suppliers}
         />
       )}
 
-      {activeTab === 'stock-aging' && stockAgingQuery.data && (
+      {!requiresCenterSelection && activeTab === 'stock-aging' && stockAgingQuery.data && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             <SummaryCard label="전체 품목" value={formatNumber(stockAgingQuery.data.summary.rowCount)} />

@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Users, Shield, Bell, Key, Database, ChevronRight } from 'lucide-react'
+import { Settings, Users, Shield, Bell, Key, Database, ChevronRight, Plus, MessageCircle } from 'lucide-react'
 
 type TabId = 'general' | 'users' | 'permissions' | 'notifications' | 'api' | 'backup'
 
@@ -28,9 +28,9 @@ const tabs: Tab[] = [
 ]
 
 const mockUsers = [
-  { id: 1, name: '김점장', email: 'kim@store.com', role: '점주 (관리자)', avatar: '👨‍💼' },
-  { id: 2, name: '이직원', email: 'lee@store.com', role: '창고 직원', avatar: '👩‍💼' },
-  { id: 3, name: '박직원', email: 'park@store.com', role: '창고 직원', avatar: '👨‍💼' },
+  { id: 1, name: '김점장', email: 'kim@store.com', role: '센터 관리자' },
+  { id: 2, name: '이직원', email: 'lee@store.com', role: '창고 직원' },
+  { id: 3, name: '박직원', email: 'park@store.com', role: '창고 직원' },
 ]
 
 export function SettingsPage() {
@@ -43,14 +43,15 @@ export function SettingsPage() {
         <p className="text-text-secondary mt-1">시스템 설정 및 관리를 확인하세요.</p>
       </div>
 
-      <div className="flex gap-6">
-        <div className="w-64 shrink-0">
-          <nav className="bg-white rounded-xl border border-neutral-200 p-2">
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="lg:w-64 shrink-0">
+          <nav className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 bg-white rounded-xl border border-neutral-200 p-2 gap-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                className={`w-full flex items-center gap-3 px-3 sm:px-4 py-3 min-h-[44px] rounded-lg text-left transition-colors ${
                   activeTab === tab.id
                     ? 'bg-primary-50 text-primary-600'
                     : 'text-text-secondary hover:bg-neutral-50'
@@ -58,7 +59,7 @@ export function SettingsPage() {
               >
                 <tab.icon className="w-5 h-5" />
                 <span className="font-medium">{tab.label}</span>
-                {activeTab === tab.id && <ChevronRight className="w-4 h-4 ml-auto" />}
+                {activeTab === tab.id && <ChevronRight className="w-4 h-4 ml-auto hidden lg:block" />}
               </button>
             ))}
           </nav>
@@ -88,15 +89,15 @@ function GeneralSettings() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">창고명</label>
-              <input type="text" defaultValue="강남점" className="w-full px-3 py-2 border border-neutral-300 rounded-lg" />
+              <input type="text" defaultValue="강남센터" className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg" />
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">창고 ID</label>
-              <input type="text" defaultValue="gangnam-store" readOnly className="w-full px-3 py-2 border border-neutral-200 rounded-lg bg-neutral-50" />
+              <input type="text" defaultValue="gangnam-center" readOnly className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-200 rounded-lg bg-neutral-50" />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-neutral-700 mb-1">주소</label>
-              <input type="text" defaultValue="서울특별시 강남구 테헤란로 123" className="w-full px-3 py-2 border border-neutral-300 rounded-lg" />
+              <input type="text" defaultValue="서울특별시 강남구 테헤란로 123" className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg" />
             </div>
           </div>
         </div>
@@ -106,14 +107,14 @@ function GeneralSettings() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">언어</label>
-              <select className="w-full px-3 py-2 border border-neutral-300 rounded-lg">
+              <select className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg">
                 <option value="ko">한국어</option>
                 <option value="en">English</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">시간대</label>
-              <select className="w-full px-3 py-2 border border-neutral-300 rounded-lg">
+              <select className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg">
                 <option value="Asia/Seoul">Asia/Seoul (GMT+9)</option>
               </select>
             </div>
@@ -121,8 +122,8 @@ function GeneralSettings() {
         </div>
 
         <div className="flex gap-3 pt-4 border-t border-neutral-200">
-          <button className="px-4 py-2 border border-neutral-300 rounded-lg hover:bg-neutral-50">초기화</button>
-          <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">저장</button>
+          <button type="button" className="px-4 py-2 min-h-[44px] border border-neutral-300 rounded-lg hover:bg-neutral-50">초기화</button>
+          <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">저장</button>
         </div>
       </div>
     </div>
@@ -134,8 +135,9 @@ function UsersSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-primary">사용자 관리</h2>
-        <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
-          ➕ 사용자 추가
+        <button type="button" className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+          <Plus className="w-4 h-4" />
+          사용자 추가
         </button>
       </div>
 
@@ -143,7 +145,9 @@ function UsersSettings() {
         {mockUsers.map((user) => (
           <div key={user.id} className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
             <div className="flex items-center gap-4">
-              <span className="text-2xl">{user.avatar}</span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary-700">
+                {user.name.slice(0, 1)}
+              </span>
               <div>
                 <p className="font-medium text-text-primary">{user.name}</p>
                 <p className="text-sm text-text-secondary">{user.email}</p>
@@ -151,9 +155,9 @@ function UsersSettings() {
               </div>
             </div>
             <div className="flex gap-2">
-              <button className="px-3 py-1.5 text-sm border border-neutral-300 rounded hover:bg-neutral-100">수정</button>
+              <button type="button" className="px-3 py-2 min-h-[40px] text-sm border border-neutral-300 rounded hover:bg-neutral-100">수정</button>
               {user.id !== 1 && (
-                <button className="px-3 py-1.5 text-sm text-error border border-error rounded hover:bg-red-50">비활성화</button>
+                <button type="button" className="px-3 py-2 min-h-[40px] text-sm text-error border border-error rounded hover:bg-red-50">비활성화</button>
               )}
             </div>
           </div>
@@ -202,7 +206,7 @@ function PermissionsSettings() {
       </div>
 
       <div className="pt-4 border-t border-neutral-200">
-        <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">권한 저장</button>
+        <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">권한 저장</button>
       </div>
     </div>
   )
@@ -225,7 +229,7 @@ function NotificationsSettings() {
             <button
               type="button"
               onClick={() => navigate('/settings/notification-channels')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               채널 설정 관리
             </button>
@@ -257,7 +261,7 @@ function NotificationsSettings() {
         </div>
 
         <div className="pt-4 border-t border-neutral-200">
-          <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">저장</button>
+          <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">저장</button>
         </div>
       </div>
     </div>
@@ -279,8 +283,8 @@ function ApiSettings() {
                 <code className="text-sm text-text-secondary">sk_live_51HYs...8x2m</code>
               </div>
               <div className="flex gap-2">
-                <button className="px-3 py-1.5 text-sm border border-neutral-300 rounded hover:bg-neutral-100">복사</button>
-                <button className="px-3 py-1.5 text-sm text-error border border-error rounded hover:bg-red-50">재생성</button>
+                <button type="button" className="px-3 py-2 min-h-[40px] text-sm border border-neutral-300 rounded hover:bg-neutral-100">복사</button>
+                <button type="button" className="px-3 py-2 min-h-[40px] text-sm text-error border border-error rounded hover:bg-red-50">재생성</button>
               </div>
             </div>
             <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
@@ -289,8 +293,8 @@ function ApiSettings() {
                 <code className="text-sm text-text-secondary">sk_test_51HYs...9x3n</code>
               </div>
               <div className="flex gap-2">
-                <button className="px-3 py-1.5 text-sm border border-neutral-300 rounded hover:bg-neutral-100">복사</button>
-                <button className="px-3 py-1.5 text-sm text-error border border-error rounded hover:bg-red-50">재생성</button>
+                <button type="button" className="px-3 py-2 min-h-[40px] text-sm border border-neutral-300 rounded hover:bg-neutral-100">복사</button>
+                <button type="button" className="px-3 py-2 min-h-[40px] text-sm text-error border border-error rounded hover:bg-red-50">재생성</button>
               </div>
             </div>
           </div>
@@ -301,19 +305,19 @@ function ApiSettings() {
           <div className="space-y-3">
             <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <span>💬</span>
+                <MessageCircle className="w-5 h-5 text-primary-600" />
                 <span className="font-medium text-text-primary">슬랙</span>
                 <span className="px-2 py-0.5 text-xs bg-success/10 text-success rounded">연결됨</span>
               </div>
-              <button className="px-3 py-1.5 text-sm border border-neutral-300 rounded hover:bg-neutral-100">설정</button>
+              <button type="button" className="px-3 py-2 min-h-[40px] text-sm border border-neutral-300 rounded hover:bg-neutral-100">설정</button>
             </div>
             <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <span>💬</span>
+                <MessageCircle className="w-5 h-5 text-neutral-500" />
                 <span className="font-medium text-text-primary">카카오톡</span>
                 <span className="px-2 py-0.5 text-xs bg-neutral-200 text-text-secondary rounded">연결 안됨</span>
               </div>
-              <button className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700">연결</button>
+              <button type="button" className="px-3 py-2 min-h-[40px] text-sm bg-primary-600 text-white rounded hover:bg-primary-700">연결</button>
             </div>
           </div>
         </div>
@@ -351,8 +355,8 @@ function BackupSettings() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">지금 백업</button>
-            <button className="px-4 py-2 border border-neutral-300 rounded-lg hover:bg-neutral-100">백업 설정</button>
+            <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">지금 백업</button>
+            <button type="button" className="px-4 py-2 min-h-[44px] border border-neutral-300 rounded-lg hover:bg-neutral-100">백업 설정</button>
           </div>
         </div>
 
@@ -377,8 +381,8 @@ function BackupSettings() {
                   </td>
                   <td className="py-2 px-3">
                     <div className="flex gap-2">
-                      <button className="px-2 py-1 text-xs border border-neutral-300 rounded hover:bg-neutral-100">다운로드</button>
-                      <button className="px-2 py-1 text-xs border border-neutral-300 rounded hover:bg-neutral-100">복구</button>
+                      <button type="button" className="px-3 py-2 min-h-[36px] text-xs border border-neutral-300 rounded hover:bg-neutral-100">다운로드</button>
+                      <button type="button" className="px-3 py-2 min-h-[36px] text-xs border border-neutral-300 rounded hover:bg-neutral-100">복구</button>
                     </div>
                   </td>
                 </tr>

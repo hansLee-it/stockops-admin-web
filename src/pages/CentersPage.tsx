@@ -6,7 +6,7 @@
  * @since 2.0
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import api from '@/lib/api'
 import { Plus, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -38,22 +38,23 @@ export function CentersPage() {
     phone: '',
   })
 
-  useEffect(() => {
-    fetchCenters()
-  }, [])
-
-  const fetchCenters = async () => {
+  const fetchCenters = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
       const response = await api.get('/v1/centers')
-      setCenters(response.data)
-    } catch (err) {
-        setError('센터 데이터를 불러오지 못했습니다.')
+      setCenters(Array.isArray(response.data) ? response.data : [])
+    } catch {
+      setError('센터 데이터를 불러오지 못했습니다.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- initial page load hydrates the center list from the API. */
+    void fetchCenters()
+  }, [fetchCenters])
 
   const handleSubmit = async (e: React.FormEvent) => {
     setFormError("")
@@ -64,11 +65,12 @@ export function CentersPage() {
       } else {
         await api.post('/v1/centers', formData)
       }
-      fetchCenters()
+      void fetchCenters()
       setShowModal(false)
       setEditingCenter(null)
       setFormData({ code: '', name: '', address: '', phone: '' })
-    } catch (error) {
+    } catch {
+      setFormError('센터 저장에 실패했습니다.')
     }
   }
 
@@ -86,8 +88,9 @@ export function CentersPage() {
   const handleDelete = async (id: number) => {
     try {
       await api.delete(`/v1/centers/${id}`)
-      fetchCenters()
-    } catch (error) {
+      void fetchCenters()
+    } catch {
+      setError('센터 삭제에 실패했습니다.')
     } finally {
       setDeleteConfirm({ open: false, id: null })
     }
@@ -130,7 +133,7 @@ export function CentersPage() {
           description={error}
           variant="error"
           actionLabel="다시 시도"
-          onAction={() => fetchCenters()}
+          onAction={() => void fetchCenters()}
         />
       ) : centers.length === 0 ? (
         <EmptyState

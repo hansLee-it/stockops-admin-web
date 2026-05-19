@@ -54,7 +54,7 @@ export function ProductsPage() {
       setError(null)
       const response = await getProducts(0, 1000)
       setProducts(response.content)
-    } catch (err) {
+    } catch {
       setError('상품 목록을 불러오는데 실패했습니다.')
     } finally {
       setLoading(false)
@@ -62,6 +62,7 @@ export function ProductsPage() {
   }, [])
 
   useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- initial page load hydrates the product list from the API. */
     void fetchProducts()
   }, [fetchProducts])
 
@@ -101,7 +102,7 @@ export function ProductsPage() {
       await fetchProducts()
       setShowModal(false)
       setEditingProduct(null)
-    } catch (err) {
+    } catch {
       setError('상품 저장에 실패했습니다.')
     } finally {
       setSubmitting(false)
@@ -117,7 +118,7 @@ export function ProductsPage() {
     try {
       await deleteProduct(id)
       await fetchProducts()
-    } catch (err) {
+    } catch {
       setError('상품 삭제에 실패했습니다.')
     } finally {
       setDeleteConfirm({ open: false, id: null })

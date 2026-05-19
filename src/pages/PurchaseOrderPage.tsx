@@ -83,7 +83,7 @@ export function PurchaseOrderPage() {
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
 
-  const { data: purchaseOrders, isLoading, error } = usePurchaseOrders()
+  const { data: purchaseOrders, isLoading, error, refetch } = usePurchaseOrders()
 
   const submitMutation = useSubmitPurchaseOrder()
   const acceptMutation = useAcceptPurchaseOrder()
@@ -160,7 +160,7 @@ export function PurchaseOrderPage() {
         description={error.message}
         variant="error"
         actionLabel="다시 시도"
-        onAction={() => window.location.reload()}
+        onAction={() => void refetch()}
       />
     )
   }
@@ -190,7 +190,7 @@ export function PurchaseOrderPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">상태</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">총 품목</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">요청일</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">작업</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-neutral-200">

@@ -136,6 +136,7 @@ export function useOfflineInbound(): UseOfflineInboundReturn {
   }, [syncPendingInternal])
 
   useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- initial pending count is read from IndexedDB-backed offline storage. */
     refreshPendingCount()
   }, [refreshPendingCount])
 

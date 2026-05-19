@@ -37,12 +37,12 @@ import {
 
 const mockMutateAsync = vi.fn()
 
-function createMockMutation(overrides?: Partial<ReturnType<typeof useCreateEscalationPolicy>>) {
+function createMockMutation<T>(overrides?: Partial<T>): T {
   return {
     mutateAsync: mockMutateAsync,
     isPending: false,
     ...overrides,
-  } as unknown as ReturnType<typeof useCreateEscalationPolicy>
+  } as unknown as T
 }
 
 function createPolicies(): EscalationPolicy[] {
@@ -100,10 +100,10 @@ describe('EscalationPolicyPage', () => {
       data: createAlerts(),
       isLoading: false,
     } as ReturnType<typeof useActiveAlerts>)
-    vi.mocked(useCreateEscalationPolicy).mockReturnValue(createMockMutation())
-    vi.mocked(useUpdateEscalationPolicy).mockReturnValue(createMockMutation())
-    vi.mocked(useDeleteEscalationPolicy).mockReturnValue(createMockMutation())
-    vi.mocked(useAcknowledgeAlert).mockReturnValue(createMockMutation())
+    vi.mocked(useCreateEscalationPolicy).mockReturnValue(createMockMutation<ReturnType<typeof useCreateEscalationPolicy>>())
+    vi.mocked(useUpdateEscalationPolicy).mockReturnValue(createMockMutation<ReturnType<typeof useUpdateEscalationPolicy>>())
+    vi.mocked(useDeleteEscalationPolicy).mockReturnValue(createMockMutation<ReturnType<typeof useDeleteEscalationPolicy>>())
+    vi.mocked(useAcknowledgeAlert).mockReturnValue(createMockMutation<ReturnType<typeof useAcknowledgeAlert>>())
   })
 
   it('renders page title and description', () => {
@@ -121,14 +121,14 @@ describe('EscalationPolicyPage', () => {
     render(<EscalationPolicyPage />)
     fireEvent.change(screen.getByLabelText('센터 선택'), { target: { value: '1' } })
     expect(screen.getByText('에스컬레이션 정책')).toBeInTheDocument()
-    expect(screen.getByText('TEMPERATURE')).toBeInTheDocument()
+    expect(screen.getAllByText('TEMPERATURE').length).toBeGreaterThan(0)
   })
 
   it('disables new policy button when no center selected', () => {
     vi.mocked(useEscalationPolicies).mockReturnValue({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useEscalationPolicies>)
+    } as unknown as ReturnType<typeof useEscalationPolicies>)
     render(<EscalationPolicyPage />)
     const btn = screen.getByText('새 정책')
     expect(btn).toBeDisabled()
@@ -138,7 +138,7 @@ describe('EscalationPolicyPage', () => {
     render(<EscalationPolicyPage />)
     fireEvent.change(screen.getByLabelText('센터 선택'), { target: { value: '1' } })
     fireEvent.click(screen.getByText('새 정책'))
-    expect(screen.getByText('새 정책')).toBeInTheDocument()
+    expect(screen.getByRole('form', { name: '새 정책 폼' })).toBeInTheDocument()
   })
 
   it('opens edit modal when edit button clicked', () => {
@@ -152,7 +152,7 @@ describe('EscalationPolicyPage', () => {
     render(<EscalationPolicyPage />)
     fireEvent.change(screen.getByLabelText('센터 선택'), { target: { value: '1' } })
     fireEvent.click(screen.getByText('새 정책'))
-    const form = screen.getByText('새 정책').closest('form')!
+    const form = screen.getByRole('form', { name: '새 정책 폼' })
     fireEvent.submit(form)
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalled()

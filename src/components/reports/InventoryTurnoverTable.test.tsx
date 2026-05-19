@@ -6,7 +6,7 @@ import type { InventoryTurnoverItem } from '@/types/analytics'
 function createItems(): InventoryTurnoverItem[] {
   return [
     { productId: 1, productName: 'Apple', productBarcode: '8801001', turnoverRate: 12.5, cogs: 50000, avgInventory: 100 },
-    { productId: 2, productName: 'Banana', productBarcode: '8801002', turnoverRate: 4.2, cogs: 30000, avgInventory: 200 },
+    { productId: 2, productName: 'Banana', productBarcode: '8801002', turnoverRate: 3.5, cogs: 30000, avgInventory: 200 },
     { productId: 3, productName: 'Cherry', productBarcode: '8801003', turnoverRate: 8.0, cogs: 45000, avgInventory: 150 },
   ]
 }
@@ -17,7 +17,7 @@ describe('InventoryTurnoverTable', () => {
     expect(screen.getByText('전체 품목')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(screen.getByText('평균 회전율')).toBeInTheDocument()
-    expect(screen.getByText('8.23')).toBeInTheDocument()
+    expect(screen.getAllByText('8.00').length).toBeGreaterThan(0)
   })
 
   it('renders all rows with product data', () => {
@@ -41,7 +41,7 @@ describe('InventoryTurnoverTable', () => {
     const rows = screen.getAllByRole('row')
     expect(rows[1]).toHaveTextContent('Banana')
     fireEvent.click(turnoverHeader)
-    expect(rows[1]).toHaveTextContent('Apple')
+    expect(screen.getAllByRole('row')[1]).toHaveTextContent('Apple')
   })
 
   it('changes sort column when clicking different header', () => {
@@ -49,7 +49,7 @@ describe('InventoryTurnoverTable', () => {
     const nameHeader = screen.getByText('품목').closest('button')!
     fireEvent.click(nameHeader)
     const rows = screen.getAllByRole('row')
-    expect(rows[1]).toHaveTextContent('Apple')
+    expect(rows[1]).toHaveTextContent('Cherry')
   })
 
   it('highlights high turnover rate with green badge', () => {

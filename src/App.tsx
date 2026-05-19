@@ -6,35 +6,61 @@
  * @since 1.0
  */
 
+import { lazy, Suspense, type ComponentType, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { LoginPage } from '@/pages/LoginPage'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { InventoryPage } from '@/pages/InventoryPage'
-import { InboundPage } from '@/pages/InboundPage'
-import { OutboundPage } from '@/pages/OutboundPage'
-import { ExpiryPage } from '@/pages/ExpiryPage'
-import { LocationsPage } from '@/pages/LocationsPage'
-import { SettingsPage } from '@/pages/SettingsPage'
-import { CentersPage } from '@/pages/CentersPage'
-import { WarehousesPage } from '@/pages/WarehousesPage'
-import { PurchaseOrderPage } from '@/pages/PurchaseOrderPage'
-import { ProductsPage } from '@/pages/ProductsPage'
-import { EnvironmentPage } from '@/pages/EnvironmentPage'
-import { ReportsPage } from '@/pages/ReportsPage'
-import { AIFeaturesPage } from '@/pages/AIFeaturesPage'
-import { StockAdjustmentPage } from '@/pages/StockAdjustmentPage'
-import { AdminPage } from '@/pages/admin/AdminPage'
-import { NoticeManagement } from '@/pages/admin/NoticeManagement'
-import { AuditLogViewer } from '@/pages/admin/AuditLogViewer'
-import { EscalationPolicyPage } from '@/pages/settings/EscalationPolicyPage'
-import { NotificationChannelPage } from '@/pages/settings/NotificationChannelPage'
-import { DemandForecastPage } from '@/pages/DemandForecastPage'
-import { CycleCountPage } from '@/pages/CycleCountPage'
-import { NotificationsPage } from '@/pages/NotificationsPage'
-import { InventoryTransferPage } from '@/pages/InventoryTransferPage'
 import { MainLayout } from '@/components/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { InstallPrompt } from '@/components/pwa/InstallPrompt'
+
+function lazyPage<T extends Record<string, ComponentType>>(loader: () => Promise<T>, exportName: keyof T) {
+  return lazy(async () => {
+    const module = await loader()
+    return { default: module[exportName] }
+  })
+}
+
+const LoginPage = lazyPage(() => import('@/pages/LoginPage'), 'LoginPage')
+const DashboardPage = lazyPage(() => import('@/pages/DashboardPage'), 'DashboardPage')
+const InventoryPage = lazyPage(() => import('@/pages/InventoryPage'), 'InventoryPage')
+const InboundPage = lazyPage(() => import('@/pages/InboundPage'), 'InboundPage')
+const OutboundPage = lazyPage(() => import('@/pages/OutboundPage'), 'OutboundPage')
+const ExpiryPage = lazyPage(() => import('@/pages/ExpiryPage'), 'ExpiryPage')
+const LocationsPage = lazyPage(() => import('@/pages/LocationsPage'), 'LocationsPage')
+const SettingsPage = lazyPage(() => import('@/pages/SettingsPage'), 'SettingsPage')
+const CentersPage = lazyPage(() => import('@/pages/CentersPage'), 'CentersPage')
+const WarehousesPage = lazyPage(() => import('@/pages/WarehousesPage'), 'WarehousesPage')
+const PurchaseOrderPage = lazyPage(() => import('@/pages/PurchaseOrderPage'), 'PurchaseOrderPage')
+const ProductsPage = lazyPage(() => import('@/pages/ProductsPage'), 'ProductsPage')
+const EnvironmentPage = lazyPage(() => import('@/pages/EnvironmentPage'), 'EnvironmentPage')
+const ReportsPage = lazyPage(() => import('@/pages/ReportsPage'), 'ReportsPage')
+const AIFeaturesPage = lazyPage(() => import('@/pages/AIFeaturesPage'), 'AIFeaturesPage')
+const StockAdjustmentPage = lazyPage(() => import('@/pages/StockAdjustmentPage'), 'StockAdjustmentPage')
+const AdminPage = lazyPage(() => import('@/pages/admin/AdminPage'), 'AdminPage')
+const NoticeManagement = lazyPage(() => import('@/pages/admin/NoticeManagement'), 'NoticeManagement')
+const AuditLogViewer = lazyPage(() => import('@/pages/admin/AuditLogViewer'), 'AuditLogViewer')
+const EscalationPolicyPage = lazyPage(() => import('@/pages/settings/EscalationPolicyPage'), 'EscalationPolicyPage')
+const NotificationChannelPage = lazyPage(
+  () => import('@/pages/settings/NotificationChannelPage'),
+  'NotificationChannelPage'
+)
+const CycleCountPage = lazyPage(() => import('@/pages/CycleCountPage'), 'CycleCountPage')
+const NotificationsPage = lazyPage(() => import('@/pages/NotificationsPage'), 'NotificationsPage')
+const InventoryTransferPage = lazyPage(() => import('@/pages/InventoryTransferPage'), 'InventoryTransferPage')
+
+function PageLoading() {
+  return (
+    <div className="flex min-h-[320px] items-center justify-center">
+      <div className="flex flex-col items-center gap-3 text-neutral-600">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-100 border-t-primary-600" />
+        <p className="text-sm font-medium">화면을 불러오는 중입니다</p>
+      </div>
+    </div>
+  )
+}
+
+function routeElement(element: ReactNode) {
+  return <Suspense fallback={<PageLoading />}>{element}</Suspense>
+}
 
 /**
  * Main App component with route configuration.
@@ -56,7 +82,7 @@ function App() {
     <BrowserRouter>
       <InstallPrompt />
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={routeElement(<LoginPage />)} />
         <Route
           path="/"
           element={
@@ -66,30 +92,30 @@ function App() {
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="centers" element={<CentersPage />} />
-          <Route path="warehouses" element={<WarehousesPage />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="purchase-orders" element={<PurchaseOrderPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
-          <Route path="inbound" element={<InboundPage />} />
-          <Route path="outbound" element={<OutboundPage />} />
-          <Route path="stock-adjustments" element={<StockAdjustmentPage />} />
-          <Route path="locations" element={<LocationsPage />} />
-          <Route path="expiry" element={<ExpiryPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="settings/escalation" element={<EscalationPolicyPage />} />
-          <Route path="settings/notification-channels" element={<NotificationChannelPage />} />
-          <Route path="environment" element={<EnvironmentPage />} />
-          <Route path="reports" element={<ReportsPage />} />
-          <Route path="ai" element={<AIFeaturesPage />} />
-          <Route path="admin" element={<AdminPage />} />
-          <Route path="admin/notices" element={<NoticeManagement />} />
-          <Route path="admin/audit-logs" element={<AuditLogViewer />} />
-          <Route path="demand-forecast" element={<DemandForecastPage />} />
-          <Route path="inventory-transfers" element={<InventoryTransferPage />} />
-          <Route path="cycle-counts" element={<CycleCountPage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="dashboard" element={routeElement(<DashboardPage />)} />
+          <Route path="centers" element={routeElement(<CentersPage />)} />
+          <Route path="warehouses" element={routeElement(<WarehousesPage />)} />
+          <Route path="products" element={routeElement(<ProductsPage />)} />
+          <Route path="purchase-orders" element={routeElement(<PurchaseOrderPage />)} />
+          <Route path="inventory" element={routeElement(<InventoryPage />)} />
+          <Route path="inbound" element={routeElement(<InboundPage />)} />
+          <Route path="outbound" element={routeElement(<OutboundPage />)} />
+          <Route path="stock-adjustments" element={routeElement(<StockAdjustmentPage />)} />
+          <Route path="locations" element={routeElement(<LocationsPage />)} />
+          <Route path="expiry" element={routeElement(<ExpiryPage />)} />
+          <Route path="settings" element={routeElement(<SettingsPage />)} />
+          <Route path="settings/escalation" element={routeElement(<EscalationPolicyPage />)} />
+          <Route path="settings/notification-channels" element={routeElement(<NotificationChannelPage />)} />
+          <Route path="environment" element={routeElement(<EnvironmentPage />)} />
+          <Route path="reports" element={routeElement(<ReportsPage />)} />
+          <Route path="ai" element={routeElement(<AIFeaturesPage />)} />
+          <Route path="admin" element={routeElement(<AdminPage />)} />
+          <Route path="admin/notices" element={routeElement(<NoticeManagement />)} />
+          <Route path="admin/audit-logs" element={routeElement(<AuditLogViewer />)} />
+          <Route path="demand-forecast" element={<Navigate to="/ai" replace />} />
+          <Route path="inventory-transfers" element={routeElement(<InventoryTransferPage />)} />
+          <Route path="cycle-counts" element={routeElement(<CycleCountPage />)} />
+          <Route path="notifications" element={routeElement(<NotificationsPage />)} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -49,12 +49,14 @@ export function ExcelUploadModal({
 
   useEffect(() => {
     if (!isOpen) {
+      /* eslint-disable react-hooks/set-state-in-effect -- closing the modal resets transient upload form state. */
       setSelectedFile(null)
       setIsDragging(false)
       setIsDownloading(false)
       setIsUploading(false)
       setUploadError(null)
       setReport(null)
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen, entityType])
 

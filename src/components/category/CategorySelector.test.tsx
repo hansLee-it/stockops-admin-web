@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { CategorySelector } from './CategorySelector'
 import type { Category } from '@/types/category'
 
@@ -86,7 +86,7 @@ describe('CategorySelector', () => {
     vi.mocked(useCategoryTree).mockReturnValue({
       data: [],
       isLoading: true,
-    } as ReturnType<typeof useCategoryTree>)
+    } as unknown as ReturnType<typeof useCategoryTree>)
     render(<CategorySelector onChange={mockOnChange} />)
     const skeletons = document.querySelectorAll('.animate-pulse')
     expect(skeletons.length).toBe(3)

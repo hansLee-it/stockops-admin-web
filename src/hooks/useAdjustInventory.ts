@@ -72,7 +72,7 @@ export function useAdjustmentReasonCodes(): UseQueryResult<AdjustmentReasonCode[
       const response = await api.get<AdjustmentReasonCode[]>('/v1/reason-codes', {
         params: { category: INVENTORY_ADJUSTMENT_REASON_CATEGORY },
       })
-      return response.data
+      return Array.isArray(response.data) ? response.data : []
     },
   })
 }
@@ -99,6 +99,7 @@ export function useAdjustInventory(): UseMutationResult<
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      await queryClient.invalidateQueries({ queryKey: ['inventory-adjustments'] })
     },
   })
 }
@@ -115,7 +116,7 @@ export function usePendingAdjustments(): UseQueryResult<StockAdjustment[], Axios
     queryKey: ['inventory-adjustments', 'pending'],
     queryFn: async () => {
       const response = await api.get<StockAdjustment[]>('/v1/inventory/adjustments/pending')
-      return response.data
+      return Array.isArray(response.data) ? response.data : []
     },
   })
 }

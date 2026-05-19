@@ -88,12 +88,14 @@ export function AIFeaturesPage() {
 
   useEffect(() => {
     if (scopeMetadata && !scopeMetadata.global) {
+      /* eslint-disable react-hooks/set-state-in-effect -- applies server-provided single-scope defaults to the filter controls. */
       if (scopeMetadata.centerIds.length === 1) {
         setCenterId(scopeMetadata.centerIds[0])
       }
       if (scopeMetadata.warehouseIds.length === 1) {
         setWarehouseId(scopeMetadata.warehouseIds[0])
       }
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [scopeMetadata])
 

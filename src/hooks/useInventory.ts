@@ -12,6 +12,18 @@ import { AxiosError } from 'axios'
 import api from '@/lib/api'
 import type { Inventory, InventoryFilters, InventoryTransaction, TransactionFilters } from '@/types/inventory'
 
+function normalizeArrayResponse<T>(data: unknown): T[] {
+  if (Array.isArray(data)) {
+    return data
+  }
+
+  if (data && typeof data === 'object' && Array.isArray((data as { content?: unknown }).content)) {
+    return (data as { content: T[] }).content
+  }
+
+  return []
+}
+
 /**
  * Fetches inventory list with optional filters.
  *
@@ -32,7 +44,7 @@ export function useInventory(filters?: InventoryFilters): UseQueryResult<Invento
       if (filters?.size) params.append('size', filters.size.toString())
 
       const response = await api.get<Inventory[]>(`/v1/inventory?${params.toString()}`)
-      return response.data
+      return normalizeArrayResponse<Inventory>(response.data)
     },
   })
 }
@@ -77,7 +89,7 @@ export function useTransactionHistory(filters?: TransactionFilters): UseQueryRes
       if (filters?.size) params.append('size', filters.size.toString())
 
       const response = await api.get<InventoryTransaction[]>(`/v1/inventory/transactions?${params.toString()}`)
-      return response.data
+      return normalizeArrayResponse<InventoryTransaction>(response.data)
     },
   })
 }
@@ -94,7 +106,7 @@ export function useRecentTransactions(): UseQueryResult<InventoryTransaction[], 
     queryKey: ['transactions', 'recent'],
     queryFn: async () => {
       const response = await api.get<InventoryTransaction[]>('/v1/inventory/transactions/recent')
-      return response.data
+      return normalizeArrayResponse<InventoryTransaction>(response.data)
     },
   })
 }

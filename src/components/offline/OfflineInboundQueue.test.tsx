@@ -180,8 +180,8 @@ describe('OfflineInboundQueue', () => {
         isOnline={true}
       />
     )
-    await waitFor(() => screen.getByLabelText('Close'))
-    fireEvent.click(screen.getByLabelText('Close'))
+    await waitFor(() => screen.getByLabelText('닫기'))
+    fireEvent.click(screen.getByLabelText('닫기'))
     expect(mockOnClose).toHaveBeenCalled()
   })
 
@@ -212,8 +212,8 @@ describe('OfflineInboundQueue', () => {
         isOnline={true}
       />
     )
-    await waitFor(() => screen.getAllByLabelText('Delete item'))
-    const deleteBtns = screen.getAllByLabelText('Delete item')
+    await waitFor(() => screen.getAllByLabelText('대기 항목 삭제'))
+    const deleteBtns = screen.getAllByLabelText('대기 항목 삭제')
     fireEvent.click(deleteBtns[0])
     await waitFor(() => {
       expect(removeInbound).toHaveBeenCalledWith(1)

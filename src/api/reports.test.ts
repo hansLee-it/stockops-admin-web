@@ -49,6 +49,32 @@ describe('reports API', () => {
     })
   })
 
+  it('getInventoryTurnoverReport normalizes backend array response', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [{
+        productId: 1,
+        productName: '프리미엄 우유 1L',
+        productCode: '8801007000011',
+        turnoverRate: 1.25,
+        cogs: 3200,
+        averageInventoryQty: 188,
+      }],
+    })
+
+    const result = await getInventoryTurnoverReport('2026-04-01', '2026-04-30')
+
+    expect(result).toEqual({
+      items: [{
+        productId: 1,
+        productName: '프리미엄 우유 1L',
+        productBarcode: '8801007000011',
+        turnoverRate: 1.25,
+        cogs: 3200,
+        avgInventory: 188,
+      }],
+    })
+  })
+
   it('getAbcAnalysisReport calls correct endpoint', async () => {
     const mockResponse: AbcAnalysisReportResponse = {
       items: [{ productId: 1, productName: 'P1', revenue: 5000, revenuePercentage: 50, cumulativePercentage: 50, class: 'A' }],
@@ -74,6 +100,31 @@ describe('reports API', () => {
     })
   })
 
+  it('getAbcAnalysisReport normalizes backend class fields', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [{
+        productId: 1,
+        productName: 'P1',
+        annualUsageValue: 5000,
+        cumulativePercentage: 48.5,
+        abcClass: 'A',
+      }],
+    })
+
+    const result = await getAbcAnalysisReport(1)
+
+    expect(result).toEqual({
+      items: [{
+        productId: 1,
+        productName: 'P1',
+        revenue: 5000,
+        revenuePercentage: 0,
+        cumulativePercentage: 48.5,
+        class: 'A',
+      }],
+    })
+  })
+
   it('getXyzAnalysisReport calls correct endpoint', async () => {
     const mockResponse: XyzAnalysisReportResponse = {
       items: [{ productId: 1, productName: 'P1', coefficientOfVariation: 0.5, class: 'X' }],
@@ -88,6 +139,23 @@ describe('reports API', () => {
     expect(result).toEqual(mockResponse)
   })
 
+  it('getXyzAnalysisReport normalizes backend volatility fields', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [{
+        productId: 1,
+        productName: 'P1',
+        cv: 0.32,
+        xyzClass: 'X',
+      }],
+    })
+
+    const result = await getXyzAnalysisReport(1)
+
+    expect(result).toEqual({
+      items: [{ productId: 1, productName: 'P1', coefficientOfVariation: 0.32, class: 'X' }],
+    })
+  })
+
   it('getAbcXyzMatrixReport calls correct endpoint', async () => {
     const mockResponse: AbcXyzMatrixReportResponse = {
       cells: [{ abcClass: 'A', xyzClass: 'X', productCount: 5, products: [{ productId: 1, productName: 'P1' }] }],
@@ -100,6 +168,33 @@ describe('reports API', () => {
       params: {},
     })
     expect(result).toEqual(mockResponse)
+  })
+
+  it('getAbcXyzMatrixReport flattens backend matrix rows', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        rows: [{
+          abcClass: 'A',
+          xCount: 2,
+          yCount: 1,
+          zCount: 0,
+          xProducts: [{ productId: 1, productName: 'P1' }],
+          yProducts: [{ productId: 2, productName: 'P2' }],
+          zProducts: [],
+        }],
+        totalProductCount: 3,
+      },
+    })
+
+    const result = await getAbcXyzMatrixReport(1)
+
+    expect(result).toEqual({
+      cells: [
+        { abcClass: 'A', xyzClass: 'X', productCount: 2, products: [{ productId: 1, productName: 'P1' }] },
+        { abcClass: 'A', xyzClass: 'Y', productCount: 1, products: [{ productId: 2, productName: 'P2' }] },
+        { abcClass: 'A', xyzClass: 'Z', productCount: 0, products: [] },
+      ],
+    })
   })
 
   it('propagates API errors', async () => {

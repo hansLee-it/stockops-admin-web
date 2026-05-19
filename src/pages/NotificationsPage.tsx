@@ -19,7 +19,7 @@ import { EmptyState } from '@/components/common/EmptyState'
  */
 export function NotificationsPage() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false)
-  const { data: notifications, isLoading, error } = useNotifications(!showUnreadOnly)
+  const { data: notifications, isLoading, error, refetch } = useNotifications(!showUnreadOnly)
   const { data: unreadCount } = useUnreadNotificationCount()
   const markAsRead = useMarkAsRead()
   const markAllAsRead = useMarkAllAsRead()
@@ -39,7 +39,7 @@ export function NotificationsPage() {
         description={error.message}
         variant="error"
         actionLabel="다시 시도"
-        onAction={() => window.location.reload()}
+        onAction={() => void refetch()}
       />
     )
   }

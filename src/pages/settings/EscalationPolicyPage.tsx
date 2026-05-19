@@ -119,6 +119,7 @@ export function EscalationPolicyPage() {
 
   useEffect(() => {
     if (selectedCenterId && centers && centers.length > 0 && !isModalOpen) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect -- keeps new policy forms aligned with the selected settings center. */
       setFormData((prev) => ({ ...prev, centerId: selectedCenterId }))
     }
   }, [selectedCenterId, centers, isModalOpen])
@@ -378,6 +379,7 @@ export function EscalationPolicyPage() {
               <thead>
                 <tr className="border-b border-neutral-200">
                   <th className="text-left py-3 px-4 text-sm font-medium text-text-secondary">알림 유형</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-text-secondary">메시지</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-text-secondary">위치</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-text-secondary">심각도</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-text-secondary">상태</th>
@@ -390,6 +392,7 @@ export function EscalationPolicyPage() {
                 {alerts.map((alert) => (
                   <tr key={alert.id} className="border-b border-neutral-100">
                     <td className="py-3 px-4 text-text-primary">{alert.alertType}</td>
+                    <td className="py-3 px-4 text-text-secondary">{alert.message}</td>
                     <td className="py-3 px-4 text-text-secondary">
                       센터 {alert.centerId}
                       {alert.warehouseId ? ` / 창고 ${alert.warehouseId}` : ''}
@@ -462,7 +465,11 @@ export function EscalationPolicyPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form
+              aria-label={editingPolicy ? '정책 수정 폼' : '새 정책 폼'}
+              onSubmit={handleSubmit}
+              className="space-y-5"
+            >
               {/* Center */}
               <div>
                 <label htmlFor="policyCenter" className="block text-sm font-medium text-neutral-700 mb-1">

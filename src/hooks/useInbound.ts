@@ -12,6 +12,18 @@ import { AxiosError } from 'axios'
 import api from '@/lib/api'
 import type { Inbound, InboundItem, CreateInboundRequest, AddInboundItemRequest } from '@/types/inbound'
 
+function normalizeArrayResponse<T>(data: unknown): T[] {
+  if (Array.isArray(data)) {
+    return data
+  }
+
+  if (data && typeof data === 'object' && Array.isArray((data as { content?: unknown }).content)) {
+    return (data as { content: T[] }).content
+  }
+
+  return []
+}
+
 /**
  * Fetches all inbounds with optional status filter.
  *
@@ -26,7 +38,7 @@ export function useInbounds(status?: string): UseQueryResult<Inbound[], AxiosErr
     queryFn: async () => {
       const params = status ? `?status=${status}` : ''
       const response = await api.get<Inbound[]>(`/v1/inbounds${params}`)
-      return response.data
+      return normalizeArrayResponse<Inbound>(response.data)
     },
   })
 }
@@ -65,7 +77,7 @@ export function useInboundItems(inboundId: number | null): UseQueryResult<Inboun
     queryFn: async () => {
       if (!inboundId) throw new Error('Inbound ID is required')
       const response = await api.get<InboundItem[]>(`/v1/inbounds/${inboundId}/items`)
-      return response.data
+      return normalizeArrayResponse<InboundItem>(response.data)
     },
     enabled: inboundId !== null,
   })

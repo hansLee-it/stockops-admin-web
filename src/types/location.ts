@@ -9,14 +9,27 @@
 /**
  * Location response from API.
  */
+export type LocationType = 'STORAGE' | 'RECEIVING' | 'SHIPPING' | 'QUARANTINE'
+
 export interface Location {
   id: number
+  warehouseId?: number
   code: string
   name: string
-  type: string
+  type: LocationType | string
   zone: string | null
   shelf: string | null
   level: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface LocationRequest {
+  warehouseId: number
+  code: string
+  name: string
+  type: LocationType
+  zone?: string | null
+  shelf?: string | null
+  level?: string | null
 }

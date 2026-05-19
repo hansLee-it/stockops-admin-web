@@ -93,6 +93,7 @@ export function NotificationChannelPage() {
 
   useEffect(() => {
     if (selectedCenterId && centers && centers.length > 0 && !isModalOpen) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect -- keeps new channel forms aligned with the selected settings center. */
       setFormData((prev) => ({ ...prev, centerId: selectedCenterId }))
     }
   }, [selectedCenterId, centers, isModalOpen])
@@ -368,7 +369,11 @@ export function NotificationChannelPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form
+              aria-label={editingConfig ? '채널 설정 수정 폼' : '새 채널 설정 폼'}
+              onSubmit={handleSubmit}
+              className="space-y-5"
+            >
               {/* Center */}
               <div>
                 <label htmlFor="configCenter" className="block text-sm font-medium text-neutral-700 mb-1">
