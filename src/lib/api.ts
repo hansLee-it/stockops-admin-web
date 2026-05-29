@@ -1,6 +1,7 @@
 /**
  * Axios HTTP client with JWT authentication interceptor.
- * Automatically attaches Bearer token to requests and handles 401 responses.
+ * Automatically attaches Bearer token to requests and handles 401 responses
+ * with automatic token refresh flow.
  *
  * @author StockOps Team
  * @since 1.0
@@ -17,14 +18,42 @@ import { useAuthStore } from '@/stores/authStore'
  */
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
+/** Flag to prevent multiple concurrent refresh requests */
+let isRefreshing = false
+/** Queue of failed request callbacks waiting for token refresh */
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = []
+
+/**
+ * Process the queue of failed requests after a successful token refresh.
+ */
+function processQueue(error: unknown, token: string | null = null) {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token!)
+    }
+  })
+  failedQueue = []
+}
+
+/**
+ * Force logout and redirect to login page.
+ */
+function forceLogout() {
+  useAuthStore.getState().logout()
+  window.location.href = '/login'
+}
+
 /**
  * Request interceptor that attaches JWT token to Authorization header.
- * Retrieves token from Zustand auth store.
+ * Retrieves token from Zustand auth store (memory only).
  * Excludes login endpoint from adding Authorization header.
  */
 api.interceptors.request.use((config) => {
@@ -40,13 +69,14 @@ api.interceptors.request.use((config) => {
 })
 
 /**
- * Response interceptor that separates network failures from authentication errors.
- * Network and timeout failures surface a toast without clearing auth state,
- * while real 401 responses still force a logout and redirect to the login page.
+ * Response interceptor that handles:
+ * - Network failures and timeouts (toast without clearing auth)
+ * - 401 responses (automatic token refresh with retry)
+ * - 5xx responses (server error toast)
  */
 api.interceptors.response.use(
   (response) => response,
-  (error: unknown) => {
+  async (error: unknown) => {
     const message = getErrorMessage(error)
 
     if (message) {
@@ -55,8 +85,62 @@ api.interceptors.response.use(
     }
 
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      useAuthStore.getState().logout()
-      window.location.href = '/login'
+      const originalRequest = error.config
+
+      // If this is already a refresh request, don't retry
+      if (!originalRequest || originalRequest.url === '/v1/auth/refresh') {
+        forceLogout()
+        return Promise.reject(error)
+      }
+
+      // If already refreshing, queue this request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token: string) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`
+              resolve(api(originalRequest))
+            },
+            reject,
+          })
+        })
+      }
+
+      isRefreshing = true
+
+      try {
+        const token = useAuthStore.getState().token
+        if (!token) {
+          forceLogout()
+          return Promise.reject(error)
+        }
+
+        const response = await axios.post<{ accessToken: string }>(
+          `${import.meta.env.VITE_API_BASE_URL ?? '/api'}/v1/auth/refresh`,
+          {},
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+
+        const { accessToken } = response.data
+        useAuthStore.getState().setToken(accessToken)
+
+        processQueue(null, accessToken)
+
+        // Retry the original request with the new token
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`
+        return api(originalRequest)
+      } catch (refreshError) {
+        processQueue(refreshError, null)
+        forceLogout()
+        return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
+      }
     }
 
     if (axios.isAxiosError(error) && (error.response?.status ?? 0) >= 500) {
