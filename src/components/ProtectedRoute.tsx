@@ -59,7 +59,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />
   }
 
-  const adminPaths = ['/admin', '/admin/notices', '/admin/audit-logs']
+  const adminPaths = ['/admin', '/admin/notices', '/admin/audit-logs', '/admin/ai-suggestions']
   if (adminPaths.some((path) => location.pathname === path) && !isAdminRole(user?.role)) {
     return <Navigate to="/dashboard" replace />
   }

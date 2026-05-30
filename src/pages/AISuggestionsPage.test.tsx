@@ -1,0 +1,556 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { AISuggestionsPage } from './AISuggestionsPage'
+import type { AISuggestion, AISuggestionStatus, AISuggestionAction } from '@/types/aiSuggestion'
+
+vi.mock('@/hooks/useOnlineStatus', () => ({
+  useOnlineStatus: vi.fn(() => true),
+}))
+
+vi.mock('@/hooks/useAISuggestion', () => ({
+  useSuggestions: vi.fn(),
+  useSuggestion: vi.fn(),
+  useApproveSuggestion: vi.fn(),
+  useRejectSuggestion: vi.fn(),
+  useExecuteSuggestion: vi.fn(),
+}))
+
+vi.mock('@/lib/toast', () => ({
+  showToast: vi.fn(),
+}))
+
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import {
+  useSuggestions,
+  useSuggestion,
+  useApproveSuggestion,
+  useRejectSuggestion,
+  useExecuteSuggestion,
+} from '@/hooks/useAISuggestion'
+import { showToast } from '@/lib/toast'
+
+function buildSuggestion(overrides: Partial<AISuggestion> = {}): AISuggestion {
+  return {
+    id: 1,
+    type: 'REORDER_STOCK',
+    severity: 'HIGH',
+    title: 'Reorder milk',
+    summary: 'Milk stock is low.',
+    reason: 'Demand is above the safety stock threshold.',
+    recommendedAction: 'Approve replenishment',
+    targetType: 'PRODUCT',
+    targetId: 42,
+    status: 'PENDING',
+    allowedActions: ['APPROVE', 'REJECT'],
+    scopeMetadata: {
+      targetScopeType: 'WAREHOUSE',
+      targetScopeId: 7,
+      requestedScopeType: 'WAREHOUSE',
+      requestedScopeId: 7,
+      visibleToApp: 'ADMIN_WEB',
+      approvalMode: 'MANUAL',
+      sourceType: 'FORECAST',
+    },
+    auditSummary: {
+      createdByUserId: 100,
+      createdAt: '2026-05-30T00:00:00Z',
+      updatedAt: '2026-05-30T00:00:00Z',
+      reviewedByUserId: null,
+      reviewedAt: null,
+      approvedByUserId: null,
+      approvedAt: null,
+      executedAt: null,
+      version: 1,
+      source: 'AI',
+      createdFromApp: 'admin-web',
+    },
+    payloadJson: '{"productId":42}',
+    confidenceScore: 0.88,
+    source: 'AI',
+    sourceType: 'FORECAST',
+    createdByUserId: 100,
+    createdFromApp: 'admin-web',
+    forecastSourceType: 'REORDER_FORECAST',
+    forecastSourceId: 200,
+    forecastModelVersion: 'v1',
+    forecastGeneratedAt: '2026-05-30T00:00:00Z',
+    forecastSourcePayloadJson: '{"forecast":true}',
+    visibleToApp: 'ADMIN_WEB',
+    approvalMode: 'MANUAL',
+    requestedOnBehalfUserId: null,
+    requestedScopeType: 'WAREHOUSE',
+    requestedScopeId: 7,
+    expiresAt: null,
+    errorMessage: null,
+    ...overrides,
+  }
+}
+
+function createMockMutation() {
+  return {
+    mutateAsync: vi.fn(),
+    isPending: false,
+    mutate: vi.fn(),
+    reset: vi.fn(),
+    data: undefined,
+    error: null,
+    isError: false,
+    isSuccess: false,
+    isIdle: true,
+    status: 'idle' as const,
+    variables: undefined,
+    context: undefined,
+    failureCount: 0,
+    failureReason: null,
+    isPaused: false,
+    submittedAt: 0,
+  }
+}
+
+describe('AISuggestionsPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(useOnlineStatus).mockReturnValue(true)
+    vi.mocked(useSuggestions).mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      isSuccess: true,
+      isPending: false,
+      isFetching: false,
+      isLoadingError: false,
+      isRefetchError: false,
+      isPlaceholderData: false,
+      dataUpdatedAt: 0,
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isRefetching: false,
+      isStale: false,
+      status: 'success' as const,
+      fetchStatus: 'idle' as const,
+      fetchNextPage: vi.fn(),
+      fetchPreviousPage: vi.fn(),
+      hasNextPage: false,
+      hasPreviousPage: false,
+      isFetchNextPageError: false,
+      isFetchPreviousPageError: false,
+      isFetchingNextPage: false,
+      isFetchingPreviousPage: false,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      promise: Promise.resolve([]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+    vi.mocked(useSuggestion).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      error: null,
+      isSuccess: false,
+      isPending: true,
+      isFetching: false,
+      isLoadingError: false,
+      isRefetchError: false,
+      isPlaceholderData: false,
+      dataUpdatedAt: 0,
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: false,
+      isFetchedAfterMount: false,
+      isRefetching: false,
+      isStale: false,
+      status: 'pending' as const,
+      fetchStatus: 'idle' as const,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      promise: Promise.resolve(undefined),
+    } as unknown as ReturnType<typeof useSuggestion>)
+    vi.mocked(useApproveSuggestion).mockReturnValue(createMockMutation() as unknown as ReturnType<typeof useApproveSuggestion>)
+    vi.mocked(useRejectSuggestion).mockReturnValue(createMockMutation() as unknown as ReturnType<typeof useRejectSuggestion>)
+    vi.mocked(useExecuteSuggestion).mockReturnValue(createMockMutation() as unknown as ReturnType<typeof useExecuteSuggestion>)
+  })
+
+  it('renders the page title and description', () => {
+    render(<AISuggestionsPage />)
+    expect(screen.getByText('AI 제안 관리')).toBeInTheDocument()
+    expect(screen.getByText('AI 생성 제안을 검토하고 승인, 거부, 또는 실행하세요')).toBeInTheDocument()
+  })
+
+  it('renders filter controls', () => {
+    render(<AISuggestionsPage />)
+    expect(screen.getByTestId('suggestion-filters')).toBeInTheDocument()
+    expect(screen.getByLabelText('상태')).toBeInTheDocument()
+    expect(screen.getByLabelText('스코프 유형')).toBeInTheDocument()
+    expect(screen.getByLabelText('스코프 ID')).toBeInTheDocument()
+  })
+
+  it('renders pending suggestions with approve and reject buttons', () => {
+    const pendingSuggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([pendingSuggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByTestId('suggestion-row-1')).toBeInTheDocument()
+    expect(screen.getByTestId('suggestion-approve-btn-1')).toBeInTheDocument()
+    expect(screen.getByTestId('suggestion-reject-btn-1')).toBeInTheDocument()
+  })
+
+  it('renders approved suggestions with execute button', () => {
+    const approvedSuggestion = buildSuggestion({ id: 2, status: 'APPROVED', allowedActions: ['EXECUTE'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([approvedSuggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByTestId('suggestion-row-2')).toBeInTheDocument()
+    expect(screen.getByTestId('suggestion-execute-btn-2')).toBeInTheDocument()
+  })
+
+  it('hides action buttons when allowedActions is empty for terminal states', () => {
+    const executedSuggestion = buildSuggestion({ id: 3, status: 'EXECUTED', allowedActions: [] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([executedSuggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByTestId('suggestion-no-actions-3')).toBeInTheDocument()
+    expect(screen.queryByTestId('suggestion-approve-btn-3')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('suggestion-reject-btn-3')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('suggestion-execute-btn-3')).not.toBeInTheDocument()
+  })
+
+  it('hides approve button when APPROVE is not in allowedActions', () => {
+    const suggestion = buildSuggestion({ id: 4, status: 'PENDING', allowedActions: ['REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.queryByTestId('suggestion-approve-btn-4')).not.toBeInTheDocument()
+    expect(screen.getByTestId('suggestion-reject-btn-4')).toBeInTheDocument()
+  })
+
+  it('shows status badges for each status type', () => {
+    const statuses: AISuggestionStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'EXECUTED', 'FAILED']
+    const suggestions = statuses.map((status, i) =>
+      buildSuggestion({ id: i + 10, status, allowedActions: getAllowedActionsForStatus(status) })
+    )
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState(suggestions),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByTestId('suggestion-status-10')).toHaveTextContent('대기')
+    expect(screen.getByTestId('suggestion-status-11')).toHaveTextContent('승인')
+    expect(screen.getByTestId('suggestion-status-12')).toHaveTextContent('거부')
+    expect(screen.getByTestId('suggestion-status-13')).toHaveTextContent('실행 완료')
+    expect(screen.getByTestId('suggestion-status-14')).toHaveTextContent('실행 실패')
+  })
+
+  it('shows summary cards with correct counts', () => {
+    const suggestions = [
+      buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] }),
+      buildSuggestion({ id: 2, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] }),
+      buildSuggestion({ id: 3, status: 'APPROVED', allowedActions: ['EXECUTE'] }),
+      buildSuggestion({ id: 4, status: 'REJECTED', allowedActions: [] }),
+      buildSuggestion({ id: 5, status: 'EXECUTED', allowedActions: [] }),
+      buildSuggestion({ id: 6, status: 'FAILED', allowedActions: [] }),
+    ]
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState(suggestions),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByTestId('suggestion-pending-count')).toHaveTextContent('2')
+    expect(screen.getByTestId('suggestion-approved-count')).toHaveTextContent('1')
+    expect(screen.getByTestId('suggestion-rejected-count')).toHaveTextContent('1')
+    expect(screen.getByTestId('suggestion-executed-count')).toHaveTextContent('1')
+    expect(screen.getByTestId('suggestion-failed-count')).toHaveTextContent('1')
+  })
+
+  it('opens approve confirmation dialog when approve button clicked', () => {
+    const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByTestId('suggestion-approve-btn-1'))
+
+    expect(screen.getByText('제안 승인')).toBeInTheDocument()
+    expect(screen.getByText('이 AI 제안을 승인하시겠습니까? 승인 후 실행 가능합니다.')).toBeInTheDocument()
+  })
+
+  it('opens reject dialog with reason input when reject button clicked', () => {
+    const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByTestId('suggestion-reject-btn-1'))
+
+    expect(screen.getByTestId('reject-dialog')).toBeInTheDocument()
+    expect(screen.getByTestId('reject-reason-input')).toBeInTheDocument()
+  })
+
+  it('disables reject confirm button when reason is empty', () => {
+    const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByTestId('suggestion-reject-btn-1'))
+
+    expect(screen.getByTestId('reject-confirm-btn')).toBeDisabled()
+  })
+
+  it('enables reject confirm button when reason is provided', () => {
+    const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByTestId('suggestion-reject-btn-1'))
+    fireEvent.change(screen.getByTestId('reject-reason-input'), { target: { value: 'Not enough stock' } })
+
+    expect(screen.getByTestId('reject-confirm-btn')).not.toBeDisabled()
+  })
+
+  it('calls approve mutation and shows success toast', async () => {
+    const approveMock = vi.fn().mockResolvedValue(buildSuggestion({ id: 1, status: 'APPROVED' }))
+    vi.mocked(useApproveSuggestion).mockReturnValue({
+      ...createMockMutation(),
+      mutateAsync: approveMock,
+    } as unknown as ReturnType<typeof useApproveSuggestion>)
+
+    const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByTestId('suggestion-approve-btn-1'))
+    const confirmButtons = screen.getAllByText('승인')
+    fireEvent.click(confirmButtons[confirmButtons.length - 1])
+
+    await waitFor(() => {
+      expect(approveMock).toHaveBeenCalledWith(1)
+      expect(showToast).toHaveBeenCalledWith({ message: '제안이 승인되었습니다.', variant: 'success' })
+    })
+  })
+
+  it('shows conflict error toast on 409 response', async () => {
+    const conflictError = {
+      response: { status: 409, data: { message: 'Conflict' } },
+    }
+    const approveMock = vi.fn().mockRejectedValue(conflictError)
+    vi.mocked(useApproveSuggestion).mockReturnValue({
+      ...createMockMutation(),
+      mutateAsync: approveMock,
+    } as unknown as ReturnType<typeof useApproveSuggestion>)
+
+    const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByTestId('suggestion-approve-btn-1'))
+    const confirmButtons = screen.getAllByText('승인')
+    fireEvent.click(confirmButtons[confirmButtons.length - 1])
+
+    await waitFor(() => {
+      expect(showToast).toHaveBeenCalledWith({
+        message: '제안 상태가 변경되었습니다. 새로고침 후 다시 시도하세요.',
+        variant: 'error',
+      })
+    })
+  })
+
+  it('shows generic error toast on non-409 error', async () => {
+    const error500 = {
+      response: { status: 500, data: { message: 'Internal Server Error' } },
+    }
+    const approveMock = vi.fn().mockRejectedValue(error500)
+    vi.mocked(useApproveSuggestion).mockReturnValue({
+      ...createMockMutation(),
+      mutateAsync: approveMock,
+    } as unknown as ReturnType<typeof useApproveSuggestion>)
+
+    const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByTestId('suggestion-approve-btn-1'))
+    const confirmButtons = screen.getAllByText('승인')
+    fireEvent.click(confirmButtons[confirmButtons.length - 1])
+
+    await waitFor(() => {
+      expect(showToast).toHaveBeenCalledWith({
+        message: 'Internal Server Error',
+        variant: 'error',
+      })
+    })
+  })
+
+  it('renders error state when suggestions query fails', () => {
+    vi.mocked(useSuggestions).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: new Error('Network error'),
+      isSuccess: false,
+      isPending: false,
+      isFetching: false,
+      isLoadingError: true,
+      isRefetchError: false,
+      isPlaceholderData: false,
+      dataUpdatedAt: 0,
+      errorUpdatedAt: Date.now(),
+      failureCount: 1,
+      failureReason: null,
+      errorUpdateCount: 1,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isRefetching: false,
+      isStale: false,
+      status: 'error' as const,
+      fetchStatus: 'idle' as const,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      promise: Promise.resolve(undefined),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByText('제안 데이터를 불러오지 못했습니다')).toBeInTheDocument()
+  })
+
+  it('renders empty state when no suggestions exist', () => {
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByText('제안 데이터가 없습니다')).toBeInTheDocument()
+  })
+
+  it('renders error message for failed suggestions', () => {
+    const failedSuggestion = buildSuggestion({
+      id: 5,
+      status: 'FAILED',
+      allowedActions: [],
+      errorMessage: 'Execution timed out',
+    })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([failedSuggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByTestId('suggestion-row-5')).toBeInTheDocument()
+    expect(screen.getByTestId('suggestion-no-actions-5')).toBeInTheDocument()
+  })
+
+  it('renders severity badges correctly', () => {
+    const criticalSuggestion = buildSuggestion({ id: 1, severity: 'CRITICAL', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([criticalSuggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByTestId('suggestion-severity-1')).toHaveTextContent('긴급')
+  })
+
+  it('renders confidence score as percentage', () => {
+    const suggestion = buildSuggestion({ id: 1, confidenceScore: 0.75 })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByTestId('suggestion-confidence-1')).toHaveTextContent('75%')
+  })
+
+  it('opens execute confirmation dialog when execute button clicked', () => {
+    const approvedSuggestion = buildSuggestion({ id: 2, status: 'APPROVED', allowedActions: ['EXECUTE'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([approvedSuggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByTestId('suggestion-execute-btn-2'))
+
+    expect(screen.getByText('제안 실행')).toBeInTheDocument()
+    expect(screen.getByText('이 AI 제안을 실행하시겠습니까? 실행 후 되돌릴 수 없습니다.')).toBeInTheDocument()
+  })
+})
+
+function getAllowedActionsForStatus(status: AISuggestionStatus): AISuggestionAction[] {
+  switch (status) {
+    case 'PENDING': return ['APPROVE', 'REJECT']
+    case 'APPROVED': return ['EXECUTE']
+    case 'REJECTED': return []
+    case 'EXECUTED': return []
+    case 'FAILED': return []
+    default: return []
+  }
+}
+
+function createMockQueryState(data: AISuggestion[]) {
+  return {
+    data,
+    isLoading: false,
+    isError: false,
+    error: null,
+    isSuccess: true,
+    isPending: false,
+    isFetching: false,
+    isLoadingError: false,
+    isRefetchError: false,
+    isPlaceholderData: false,
+    dataUpdatedAt: Date.now(),
+    errorUpdatedAt: 0,
+    failureCount: 0,
+    failureReason: null,
+    errorUpdateCount: 0,
+    isFetched: true,
+    isFetchedAfterMount: true,
+    isRefetching: false,
+    isStale: false,
+    status: 'success' as const,
+    fetchStatus: 'idle' as const,
+    refetch: vi.fn(),
+    remove: vi.fn(),
+    promise: Promise.resolve(data),
+  }
+}

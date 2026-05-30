@@ -273,6 +273,18 @@ export function MainLayout() {
                 감사 로그
               </Link>
               <Link
+                to="/admin/ai-suggestions"
+                onClick={handleSidebarNavigate}
+                className={`flex items-center gap-3 p-3 rounded-lg mb-1 transition-colors ${
+                  location.pathname === '/admin/ai-suggestions'
+                    ? 'bg-primary-600 text-white'
+                    : 'text-white/70 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Brain className="w-5 h-5" />
+                AI 제안 관리
+              </Link>
+              <Link
                 to="/settings/escalation"
                 onClick={handleSidebarNavigate}
                 className={`flex items-center gap-3 p-3 rounded-lg mb-1 transition-colors ${

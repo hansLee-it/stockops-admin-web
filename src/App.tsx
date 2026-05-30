@@ -38,6 +38,7 @@ const StockAdjustmentPage = lazyPage(() => import('@/pages/StockAdjustmentPage')
 const AdminPage = lazyPage(() => import('@/pages/admin/AdminPage'), 'AdminPage')
 const NoticeManagement = lazyPage(() => import('@/pages/admin/NoticeManagement'), 'NoticeManagement')
 const AuditLogViewer = lazyPage(() => import('@/pages/admin/AuditLogViewer'), 'AuditLogViewer')
+const AISuggestionsPage = lazyPage(() => import('@/pages/AISuggestionsPage'), 'AISuggestionsPage')
 const EscalationPolicyPage = lazyPage(() => import('@/pages/settings/EscalationPolicyPage'), 'EscalationPolicyPage')
 const NotificationChannelPage = lazyPage(
   () => import('@/pages/settings/NotificationChannelPage'),
@@ -112,6 +113,7 @@ function App() {
           <Route path="admin" element={routeElement(<AdminPage />)} />
           <Route path="admin/notices" element={routeElement(<NoticeManagement />)} />
           <Route path="admin/audit-logs" element={routeElement(<AuditLogViewer />)} />
+          <Route path="admin/ai-suggestions" element={routeElement(<AISuggestionsPage />)} />
           <Route path="demand-forecast" element={<Navigate to="/ai" replace />} />
           <Route path="inventory-transfers" element={routeElement(<InventoryTransferPage />)} />
           <Route path="cycle-counts" element={routeElement(<CycleCountPage />)} />
