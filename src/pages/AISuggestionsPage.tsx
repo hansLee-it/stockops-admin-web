@@ -308,6 +308,7 @@ export function AISuggestionsPage() {
                     suggestion={suggestion}
                     isExpanded={expandedRow === suggestion.id}
                     onToggleExpand={() => setExpandedRow(expandedRow === suggestion.id ? null : suggestion.id)}
+                    onOpenDetail={() => setSelectedId(suggestion.id)}
                     isOnline={isOnline}
                     isApproving={approveMutation.isPending}
                     isRejecting={rejectMutation.isPending}
@@ -408,6 +409,7 @@ interface SuggestionRowProps {
   suggestion: AISuggestion
   isExpanded: boolean
   onToggleExpand: () => void
+  onOpenDetail: () => void
   isOnline: boolean
   isApproving: boolean
   isRejecting: boolean
@@ -422,6 +424,7 @@ function SuggestionRow({
   suggestion: s,
   isExpanded,
   onToggleExpand,
+  onOpenDetail,
   isOnline,
   isApproving,
   isRejecting,
@@ -454,7 +457,10 @@ function SuggestionRow({
           <div className="font-medium text-text-primary" data-testid={`suggestion-title-${s.id}`}>
             <button
               type="button"
-              onClick={onToggleExpand}
+              onClick={() => {
+                onToggleExpand()
+                onOpenDetail()
+              }}
               className="text-left hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
             >
               {s.title}

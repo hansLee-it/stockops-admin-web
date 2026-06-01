@@ -182,6 +182,20 @@ describe('AISuggestionsPage', () => {
     expect(screen.getByText('AI 생성 제안을 검토하고 승인, 거부, 또는 실행하세요')).toBeInTheDocument()
   })
 
+  it('renders offline banner and disables suggestion actions when offline', () => {
+    vi.mocked(useOnlineStatus).mockReturnValue(false)
+    const suggestion = buildSuggestion({ id: 8, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    expect(screen.getByTestId('suggestion-refresh')).toBeDisabled()
+    expect(screen.getByTestId('suggestion-approve-btn-8')).toBeDisabled()
+    expect(screen.getByTestId('suggestion-reject-btn-8')).toBeDisabled()
+  })
+
   it('renders filter controls', () => {
     render(<AISuggestionsPage />)
     expect(screen.getByTestId('suggestion-filters')).toBeInTheDocument()
@@ -213,6 +227,49 @@ describe('AISuggestionsPage', () => {
 
     expect(screen.getByTestId('suggestion-row-2')).toBeInTheDocument()
     expect(screen.getByTestId('suggestion-execute-btn-2')).toBeInTheDocument()
+  })
+
+  it('opens the detail panel when a suggestion title is clicked', () => {
+    const suggestion = buildSuggestion({ id: 9, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+    vi.mocked(useSuggestion).mockImplementation((id: number | null) => {
+      if (id === 9) {
+        return createMockSuggestionDetailState(suggestion)
+      }
+
+      return createMockSuggestionDetailState(undefined)
+    })
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reorder milk' }))
+
+    expect(screen.getByTestId('suggestion-detail-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('detail-approve-btn')).toBeInTheDocument()
+    expect(screen.getByTestId('detail-reject-btn')).toBeInTheDocument()
+  })
+
+  it('expands a row to show reason, payload, and error details', () => {
+    const suggestion = buildSuggestion({
+      id: 10,
+      status: 'FAILED',
+      allowedActions: [],
+      errorMessage: 'Execution timed out',
+    })
+    vi.mocked(useSuggestions).mockReturnValue({
+      ...createMockQueryState([suggestion]),
+    } as unknown as ReturnType<typeof useSuggestions>)
+
+    render(<AISuggestionsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reorder milk' }))
+
+    expect(screen.getByTestId('suggestion-expanded-10')).toBeInTheDocument()
+    expect(screen.getByTestId('suggestion-reason-10')).toHaveTextContent('Demand is above the safety stock threshold.')
+    expect(screen.getByTestId('suggestion-payload-10')).toHaveTextContent('productId: 42')
+    expect(screen.getByTestId('suggestion-error-10')).toHaveTextContent('Execution timed out')
   })
 
   it('hides action buttons when allowedActions is empty for terminal states', () => {
@@ -514,6 +571,35 @@ describe('AISuggestionsPage', () => {
     expect(screen.getByText('이 AI 제안을 실행하시겠습니까? 실행 후 되돌릴 수 없습니다.')).toBeInTheDocument()
   })
 })
+
+function createMockSuggestionDetailState(data: AISuggestion | undefined) {
+  return {
+    data,
+    isLoading: false,
+    isError: false,
+    error: null,
+    isSuccess: data != null,
+    isPending: false,
+    isFetching: false,
+    isLoadingError: false,
+    isRefetchError: false,
+    isPlaceholderData: false,
+    dataUpdatedAt: data ? Date.now() : 0,
+    errorUpdatedAt: 0,
+    failureCount: 0,
+    failureReason: null,
+    errorUpdateCount: 0,
+    isFetched: data != null,
+    isFetchedAfterMount: data != null,
+    isRefetching: false,
+    isStale: false,
+    status: data ? ('success' as const) : ('pending' as const),
+    fetchStatus: 'idle' as const,
+    refetch: vi.fn(),
+    remove: vi.fn(),
+    promise: Promise.resolve(data),
+  } as unknown as ReturnType<typeof useSuggestion>
+}
 
 function getAllowedActionsForStatus(status: AISuggestionStatus): AISuggestionAction[] {
   switch (status) {

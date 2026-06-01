@@ -148,6 +148,18 @@ describe('useAISuggestion hooks', () => {
     expect(result.current.data).toEqual(suggestion)
   })
 
+  it('surfaces forbidden suggestion list errors', async () => {
+    vi.mocked(listSuggestions).mockRejectedValue(createAxiosError(403, 'Forbidden'))
+
+    const wrapper = createWrapper()
+    const { result } = renderHook(() => useSuggestions({ status: 'PENDING' }), { wrapper })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+
+    expect(listSuggestions).toHaveBeenCalledWith({ status: 'PENDING' })
+    expect(result.current.error?.response?.status).toBe(403)
+  })
+
   it('surfaces unauthorized suggestion detail errors', async () => {
     vi.mocked(getSuggestion).mockRejectedValue(createAxiosError(401, 'Unauthorized'))
 
@@ -173,6 +185,21 @@ describe('useAISuggestion hooks', () => {
     expect(result.current.error?.response?.status).toBe(409)
   })
 
+  it('approves a suggestion successfully', async () => {
+    const suggestion = buildSuggestion({ id: 24, status: 'APPROVED', allowedActions: ['EXECUTE'] })
+    vi.mocked(approveSuggestion).mockResolvedValue(suggestion)
+
+    const wrapper = createWrapper()
+    const { result } = renderHook(() => useApproveSuggestion(), { wrapper })
+
+    await result.current.mutateAsync(24)
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(approveSuggestion).toHaveBeenCalledWith(24)
+    expect(result.current.data).toEqual(suggestion)
+  })
+
   it('surfaces bad request errors from reject mutation', async () => {
     vi.mocked(rejectSuggestion).mockRejectedValue(createAxiosError(400, 'Bad Request'))
 
@@ -187,6 +214,21 @@ describe('useAISuggestion hooks', () => {
     expect(result.current.error?.response?.status).toBe(400)
   })
 
+  it('rejects a suggestion successfully', async () => {
+    const suggestion = buildSuggestion({ id: 25, status: 'REJECTED', allowedActions: [] })
+    vi.mocked(rejectSuggestion).mockResolvedValue(suggestion)
+
+    const wrapper = createWrapper()
+    const { result } = renderHook(() => useRejectSuggestion(), { wrapper })
+
+    await result.current.mutateAsync({ id: 25, request: { rejectionReason: 'Missing supporting detail' } })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(rejectSuggestion).toHaveBeenCalledWith(25, { rejectionReason: 'Missing supporting detail' })
+    expect(result.current.data).toEqual(suggestion)
+  })
+
   it('surfaces forbidden errors from execute mutation', async () => {
     vi.mocked(executeSuggestion).mockRejectedValue(createAxiosError(403, 'Forbidden'))
 
@@ -199,5 +241,20 @@ describe('useAISuggestion hooks', () => {
 
     expect(executeSuggestion).toHaveBeenCalledWith(26, { executionResult: 'Execution blocked' })
     expect(result.current.error?.response?.status).toBe(403)
+  })
+
+  it('executes a suggestion successfully', async () => {
+    const suggestion = buildSuggestion({ id: 26, status: 'EXECUTED', allowedActions: [] })
+    vi.mocked(executeSuggestion).mockResolvedValue(suggestion)
+
+    const wrapper = createWrapper()
+    const { result } = renderHook(() => useExecuteSuggestion(), { wrapper })
+
+    await result.current.mutateAsync({ id: 26, request: { executionResult: 'Execution complete' } })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(executeSuggestion).toHaveBeenCalledWith(26, { executionResult: 'Execution complete' })
+    expect(result.current.data).toEqual(suggestion)
   })
 })
