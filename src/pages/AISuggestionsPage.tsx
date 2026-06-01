@@ -8,7 +8,8 @@
  * @since 2.0
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import {
   useSuggestions,
@@ -41,11 +42,15 @@ const STATUS_CONFIG: Record<AISuggestionStatus, { label: string; color: string; 
 }
 
 const SEVERITY_CONFIG: Record<string, { label: string; color: string }> = {
+  INFO: { label: '정보', color: 'bg-sky-100 text-sky-700' },
+  WARNING: { label: '주의', color: 'bg-amber-100 text-amber-700' },
   LOW: { label: '낮음', color: 'bg-neutral-100 text-neutral-600' },
-  MEDIUM: { label: '보통', color: 'bg-amber-100 text-amber-700' },
+  MEDIUM: { label: '보통', color: 'bg-yellow-100 text-yellow-700' },
   HIGH: { label: '높음', color: 'bg-orange-100 text-orange-700' },
   CRITICAL: { label: '긴급', color: 'bg-red-100 text-red-700' },
 }
+
+const DEFAULT_SEVERITY_CONFIG = { label: '알 수 없음', color: 'bg-neutral-100 text-neutral-500' }
 
 function formatDateTime(value: string | null | undefined): string {
   if (!value) return '-'
@@ -209,9 +214,10 @@ export function AISuggestionsPage() {
               data-testid="suggestion-scope-type-filter"
             >
               <option value="">전체 스코프</option>
-              <option value="GLOBAL">전역</option>
+              <option value="ADMIN">관리</option>
               <option value="CENTER">센터</option>
               <option value="WAREHOUSE">창고</option>
+              <option value="STORE">매장</option>
             </select>
           </div>
           <div>
@@ -325,7 +331,42 @@ export function AISuggestionsPage() {
         </div>
       )}
 
-      {/* Detail Panel */}
+      {/* Detail Panel - Loading State */}
+      {selectedId && detailQuery.isLoading && (
+        <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 animate-pulse" data-testid="suggestion-detail-loading">
+          <div className="flex items-center justify-between mb-4">
+            <div className="h-6 bg-neutral-200 rounded w-24" />
+            <div className="h-5 w-5 bg-neutral-200 rounded" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="h-4 bg-neutral-200 rounded w-16" />
+              <div className="h-4 bg-neutral-100 rounded w-32" />
+              <div className="h-4 bg-neutral-200 rounded w-12" />
+              <div className="h-4 bg-neutral-100 rounded w-28" />
+            </div>
+            <div className="space-y-4">
+              <div className="h-4 bg-neutral-200 rounded w-20" />
+              <div className="h-4 bg-neutral-100 rounded w-40" />
+              <div className="h-4 bg-neutral-200 rounded w-14" />
+              <div className="h-4 bg-neutral-100 rounded w-36" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Panel - Error State */}
+      {selectedId && detailQuery.isError && (
+        <EmptyState
+          title="제안 상세를 불러오지 못했습니다"
+          description="다시 시도해주세요."
+          variant="error"
+          actionLabel="다시 시도"
+          onAction={() => detailQuery.refetch()}
+        />
+      )}
+
+      {/* Detail Panel - Data */}
       {selectedId && detailQuery.data && (
         <SuggestionDetailPanel
           suggestion={detailQuery.data}
@@ -352,45 +393,18 @@ export function AISuggestionsPage() {
       />
 
       {/* Reject Dialog */}
-      {rejectTarget !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" data-testid="reject-dialog">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">제안 거부</h2>
-            <p className="text-sm text-neutral-600 mb-4">거부 사유를 입력해주세요.</p>
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              rows={3}
-              placeholder="거부 사유를 입력하세요"
-              data-testid="reject-reason-input"
-            />
-            <div className="flex gap-3 justify-end mt-4">
-              <button
-                type="button"
-                onClick={() => { setRejectTarget(null); setRejectReason('') }}
-                className="px-4 py-2 text-neutral-600 hover:bg-neutral-100 rounded-lg"
-                data-testid="reject-cancel-btn"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (rejectReason.trim()) {
-                    handleReject(rejectTarget, rejectReason.trim())
-                  }
-                }}
-                disabled={!rejectReason.trim() || rejectMutation.isPending}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
-                data-testid="reject-confirm-btn"
-              >
-                {rejectMutation.isPending ? '거부 중...' : '거부'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RejectDialog
+        open={rejectTarget !== null}
+        onClose={() => { setRejectTarget(null); setRejectReason('') }}
+        onConfirm={() => {
+          if (rejectTarget !== null && rejectReason.trim()) {
+            handleReject(rejectTarget, rejectReason.trim())
+          }
+        }}
+        reason={rejectReason}
+        onReasonChange={setRejectReason}
+        isPending={rejectMutation.isPending}
+      />
 
       {/* Execute Confirmation */}
       <ConfirmDialog
@@ -435,7 +449,7 @@ function SuggestionRow({
   isActionAllowed,
 }: SuggestionRowProps) {
   const statusConfig = STATUS_CONFIG[s.status]
-  const severityConfig = SEVERITY_CONFIG[s.severity] ?? SEVERITY_CONFIG.MEDIUM
+  const severityConfig = SEVERITY_CONFIG[s.severity] ?? DEFAULT_SEVERITY_CONFIG
   const StatusIcon = statusConfig.icon
 
   return (
@@ -593,7 +607,7 @@ function SuggestionDetailPanel({
   isActionAllowed,
 }: SuggestionDetailPanelProps) {
   const statusConfig = STATUS_CONFIG[s.status]
-  const severityConfig = SEVERITY_CONFIG[s.severity] ?? SEVERITY_CONFIG.MEDIUM
+  const severityConfig = SEVERITY_CONFIG[s.severity] ?? DEFAULT_SEVERITY_CONFIG
   const StatusIcon = statusConfig.icon
 
   return (
@@ -779,5 +793,141 @@ function SuggestionDetailPanel({
         )}
       </div>
     </div>
+  )
+}
+
+interface RejectDialogProps {
+  open: boolean
+  onClose: () => void
+  onConfirm: () => void
+  reason: string
+  onReasonChange: (value: string) => void
+  isPending: boolean
+}
+
+function RejectDialog({ open, onClose, onConfirm, reason, onReasonChange, isPending }: RejectDialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const cancelButtonRef = useRef<HTMLButtonElement>(null)
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        onClose()
+        return
+      }
+
+      // Focus trap: keep focus within the dialog
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusableElements = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements[focusableElements.length - 1]
+
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault()
+          lastElement?.focus()
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault()
+          firstElement?.focus()
+        }
+      }
+    },
+    [onClose],
+  )
+
+  // Focus textarea when dialog opens; prevent body scroll
+  useEffect(() => {
+    if (open) {
+      textareaRef.current?.focus()
+      document.body.style.overflow = 'hidden'
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [open])
+
+  // Handle Enter key submission in textarea (Ctrl+Enter or Meta+Enter)
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && reason.trim() && !isPending) {
+      e.preventDefault()
+      onConfirm()
+    }
+  }
+
+  if (!open) return null
+
+  const isReasonEmpty = !reason.trim()
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reject-dialog-title"
+      aria-describedby="reject-dialog-description"
+      data-testid="reject-dialog"
+      onKeyDown={handleKeyDown}
+    >
+      {/* Backdrop - no action on click (prevents accidental dismiss) */}
+      <div
+        className="fixed inset-0 bg-black/50"
+        aria-hidden="true"
+      />
+
+      <div
+        ref={dialogRef}
+        className="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+      >
+        <h2
+          id="reject-dialog-title"
+          className="text-lg font-semibold text-neutral-900 mb-2"
+        >
+          제안 거부
+        </h2>
+        <p
+          id="reject-dialog-description"
+          className="text-sm text-neutral-600 mb-4"
+        >
+          거부 사유를 입력해주세요.
+        </p>
+        <label htmlFor="reject-reason-textarea" className="sr-only">거부 사유</label>
+        <textarea
+          id="reject-reason-textarea"
+          ref={textareaRef}
+          value={reason}
+          onChange={(e) => onReasonChange(e.target.value)}
+          onKeyDown={handleTextareaKeyDown}
+          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          rows={3}
+          placeholder="거부 사유를 입력하세요"
+          data-testid="reject-reason-input"
+          aria-describedby="reject-dialog-description"
+        />
+        <div className="flex gap-3 justify-end mt-4">
+          <button
+            ref={cancelButtonRef}
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2"
+            data-testid="reject-cancel-btn"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isReasonEmpty || isPending}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-600 hover:bg-red-700 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-70"
+            data-testid="reject-confirm-btn"
+          >
+            {isPending ? '거부 중...' : '거부'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }

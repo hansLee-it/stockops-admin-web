@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AISuggestionsPage } from './AISuggestionsPage'
-import type { AISuggestion, AISuggestionStatus, AISuggestionAction } from '@/types/aiSuggestion'
+import type { AISuggestion, AISuggestionStatus, AISuggestionAction, AISuggestionSeverity } from '@/types/aiSuggestion'
 
 vi.mock('@/hooks/useOnlineStatus', () => ({
   useOnlineStatus: vi.fn(() => true),
@@ -569,6 +569,361 @@ describe('AISuggestionsPage', () => {
 
     expect(screen.getByText('제안 실행')).toBeInTheDocument()
     expect(screen.getByText('이 AI 제안을 실행하시겠습니까? 실행 후 되돌릴 수 없습니다.')).toBeInTheDocument()
+  })
+
+  describe('scope filter requests', () => {
+    it('sends ADMIN scope filter param when ADMIN is selected', () => {
+      render(<AISuggestionsPage />)
+
+      const scopeSelect = screen.getByLabelText('스코프 유형')
+      fireEvent.change(scopeSelect, { target: { value: 'ADMIN' } })
+
+      expect(scopeSelect).toHaveValue('ADMIN')
+    })
+
+    it('sends STORE scope filter param when STORE is selected', () => {
+      render(<AISuggestionsPage />)
+
+      const scopeSelect = screen.getByLabelText('스코프 유형')
+      fireEvent.change(scopeSelect, { target: { value: 'STORE' } })
+
+      expect(scopeSelect).toHaveValue('STORE')
+    })
+
+    it('sends CENTER scope filter param when CENTER is selected', () => {
+      render(<AISuggestionsPage />)
+
+      const scopeSelect = screen.getByLabelText('스코프 유형')
+      fireEvent.change(scopeSelect, { target: { value: 'CENTER' } })
+
+      expect(scopeSelect).toHaveValue('CENTER')
+    })
+
+    it('sends WAREHOUSE scope filter param when WAREHOUSE is selected', () => {
+      render(<AISuggestionsPage />)
+
+      const scopeSelect = screen.getByLabelText('스코프 유형')
+      fireEvent.change(scopeSelect, { target: { value: 'WAREHOUSE' } })
+
+      expect(scopeSelect).toHaveValue('WAREHOUSE')
+    })
+
+    it('does not include GLOBAL as a scope filter option', () => {
+      render(<AISuggestionsPage />)
+
+      const scopeSelect = screen.getByLabelText('스코프 유형')
+      const options = Array.from(scopeSelect.querySelectorAll('option'))
+
+      expect(options.some((o) => o.value === 'GLOBAL')).toBe(false)
+    })
+
+    it('includes ADMIN, CENTER, WAREHOUSE, and STORE as scope filter options', () => {
+      render(<AISuggestionsPage />)
+
+      const scopeSelect = screen.getByLabelText('스코프 유형')
+      const optionValues = Array.from(scopeSelect.querySelectorAll('option')).map((o) => o.value)
+
+      expect(optionValues).toContain('ADMIN')
+      expect(optionValues).toContain('CENTER')
+      expect(optionValues).toContain('WAREHOUSE')
+      expect(optionValues).toContain('STORE')
+    })
+
+    it('renders STORE scope in suggestion row', () => {
+      const storeSuggestion = buildSuggestion({
+        id: 50,
+        scopeMetadata: {
+          targetScopeType: 'STORE',
+          targetScopeId: 12,
+          requestedScopeType: 'STORE',
+          requestedScopeId: 12,
+          visibleToApp: 'ADMIN_WEB',
+          approvalMode: 'MANUAL',
+          sourceType: 'FORECAST',
+        },
+      })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([storeSuggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      expect(screen.getByTestId('suggestion-scope-50')).toHaveTextContent('STORE#12')
+    })
+  })
+
+  describe('detail panel loading state', () => {
+    it('shows loading skeleton when detail query is loading', () => {
+      const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([suggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+      vi.mocked(useSuggestion).mockReturnValue({
+        ...createMockSuggestionDetailState(undefined),
+        isLoading: true,
+        isPending: true,
+        status: 'pending' as const,
+        fetchStatus: 'fetching' as const,
+      } as unknown as ReturnType<typeof useSuggestion>)
+
+      render(<AISuggestionsPage />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reorder milk' }))
+
+      expect(screen.getByTestId('suggestion-detail-loading')).toBeInTheDocument()
+    })
+  })
+
+  describe('detail panel error state', () => {
+    it('shows error state when detail query fails', () => {
+      const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([suggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+      const refetchMock = vi.fn()
+      vi.mocked(useSuggestion).mockImplementation((id: number | null) => {
+        if (id === 1) {
+          return {
+            ...createMockSuggestionDetailState(undefined),
+            isLoading: false,
+            isError: true,
+            isPending: false,
+            error: new Error('Network error'),
+            status: 'error' as const,
+            fetchStatus: 'idle' as const,
+            refetch: refetchMock,
+          } as unknown as ReturnType<typeof useSuggestion>
+        }
+        return createMockSuggestionDetailState(undefined)
+      })
+
+      render(<AISuggestionsPage />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reorder milk' }))
+
+      expect(screen.getByText('제안 상세를 불러오지 못했습니다')).toBeInTheDocument()
+    })
+
+    it('allows retry from detail error state', () => {
+      const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([suggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+      const refetchMock = vi.fn()
+      vi.mocked(useSuggestion).mockImplementation((id: number | null) => {
+        if (id === 1) {
+          return {
+            ...createMockSuggestionDetailState(undefined),
+            isLoading: false,
+            isError: true,
+            isPending: false,
+            error: new Error('Network error'),
+            status: 'error' as const,
+            fetchStatus: 'idle' as const,
+            refetch: refetchMock,
+          } as unknown as ReturnType<typeof useSuggestion>
+        }
+        return createMockSuggestionDetailState(undefined)
+      })
+
+      render(<AISuggestionsPage />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reorder milk' }))
+
+      const retryButton = screen.getByText('다시 시도')
+      expect(retryButton).toBeInTheDocument()
+      fireEvent.click(retryButton)
+      expect(refetchMock).toHaveBeenCalled()
+    })
+  })
+
+  describe('reject dialog accessibility', () => {
+    it('has dialog role and aria attributes', () => {
+      const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([suggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      fireEvent.click(screen.getByTestId('suggestion-reject-btn-1'))
+
+      const dialog = screen.getByTestId('reject-dialog')
+      expect(dialog).toHaveAttribute('role', 'dialog')
+      expect(dialog).toHaveAttribute('aria-modal', 'true')
+      expect(dialog).toHaveAttribute('aria-labelledby', 'reject-dialog-title')
+      expect(dialog).toHaveAttribute('aria-describedby', 'reject-dialog-description')
+    })
+
+    it('closes on Escape key', () => {
+      const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([suggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      fireEvent.click(screen.getByTestId('suggestion-reject-btn-1'))
+      expect(screen.getByTestId('reject-dialog')).toBeInTheDocument()
+
+      fireEvent.keyDown(screen.getByTestId('reject-dialog'), { key: 'Escape' })
+      expect(screen.queryByTestId('reject-dialog')).not.toBeInTheDocument()
+    })
+
+    it('does not close on backdrop click', () => {
+      const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([suggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      fireEvent.click(screen.getByTestId('suggestion-reject-btn-1'))
+      expect(screen.getByTestId('reject-dialog')).toBeInTheDocument()
+
+      const backdrop = screen.getByTestId('reject-dialog').querySelector('[aria-hidden="true"]')
+      expect(backdrop).toBeTruthy()
+      if (backdrop) {
+        fireEvent.click(backdrop)
+      }
+      expect(screen.getByTestId('reject-dialog')).toBeInTheDocument()
+    })
+
+    it('disables submit for whitespace-only reason', () => {
+      const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([suggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      fireEvent.click(screen.getByTestId('suggestion-reject-btn-1'))
+      const input = screen.getByTestId('reject-reason-input')
+
+      fireEvent.change(input, { target: { value: '   ' } })
+      expect(screen.getByTestId('reject-confirm-btn')).toBeDisabled()
+    })
+
+    it('submits on Ctrl+Enter in textarea', async () => {
+      const rejectMock = vi.fn().mockResolvedValue(buildSuggestion({ id: 1, status: 'REJECTED' }))
+      vi.mocked(useRejectSuggestion).mockReturnValue({
+        ...createMockMutation(),
+        mutateAsync: rejectMock,
+      } as unknown as ReturnType<typeof useRejectSuggestion>)
+      const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([suggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      fireEvent.click(screen.getByTestId('suggestion-reject-btn-1'))
+      const input = screen.getByTestId('reject-reason-input')
+      fireEvent.change(input, { target: { value: 'Valid reason' } })
+
+      fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true })
+
+      await waitFor(() => {
+        expect(rejectMock).toHaveBeenCalledWith({ id: 1, request: { rejectionReason: 'Valid reason' } })
+      })
+    })
+
+    it('does not submit on Ctrl+Enter when reason is empty', () => {
+      const suggestion = buildSuggestion({ id: 1, status: 'PENDING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([suggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      fireEvent.click(screen.getByTestId('suggestion-reject-btn-1'))
+      const input = screen.getByTestId('reject-reason-input')
+
+      fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true })
+
+      expect(showToast).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('severity rendering', () => {
+    it('renders WARNING severity with correct label', () => {
+      const warningSuggestion = buildSuggestion({ id: 20, severity: 'WARNING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([warningSuggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      expect(screen.getByTestId('suggestion-severity-20')).toHaveTextContent('주의')
+    })
+
+    it('renders WARNING severity with amber styling', () => {
+      const warningSuggestion = buildSuggestion({ id: 21, severity: 'WARNING', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([warningSuggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      const badge = screen.getByTestId('suggestion-severity-21')
+      expect(badge.className).toContain('bg-amber-100')
+      expect(badge.className).toContain('text-amber-700')
+    })
+
+    it('renders INFO severity with correct label and styling', () => {
+      const infoSuggestion = buildSuggestion({ id: 22, severity: 'INFO', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([infoSuggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      const badge = screen.getByTestId('suggestion-severity-22')
+      expect(badge).toHaveTextContent('정보')
+      expect(badge.className).toContain('bg-sky-100')
+      expect(badge.className).toContain('text-sky-700')
+    })
+
+    it('renders CRITICAL severity with correct label and styling', () => {
+      const criticalSuggestion = buildSuggestion({ id: 23, severity: 'CRITICAL', allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([criticalSuggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      const badge = screen.getByTestId('suggestion-severity-23')
+      expect(badge).toHaveTextContent('긴급')
+      expect(badge.className).toContain('bg-red-100')
+      expect(badge.className).toContain('text-red-700')
+    })
+
+    it('renders unknown/legacy severity with fallback label instead of MEDIUM semantics', () => {
+      const unknownSuggestion = buildSuggestion({ id: 24, severity: 'LEGACY_SEVERITY' as AISuggestionSeverity, allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([unknownSuggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      const badge = screen.getByTestId('suggestion-severity-24')
+      expect(badge).toHaveTextContent('알 수 없음')
+      expect(badge.className).toContain('bg-neutral-100')
+      expect(badge.className).toContain('text-neutral-500')
+    })
+
+    it('does not render unknown severity with MEDIUM label or styling', () => {
+      const unknownSuggestion = buildSuggestion({ id: 25, severity: 'OBSOLETE' as AISuggestionSeverity, allowedActions: ['APPROVE', 'REJECT'] })
+      vi.mocked(useSuggestions).mockReturnValue({
+        ...createMockQueryState([unknownSuggestion]),
+      } as unknown as ReturnType<typeof useSuggestions>)
+
+      render(<AISuggestionsPage />)
+
+      const badge = screen.getByTestId('suggestion-severity-25')
+      expect(badge).not.toHaveTextContent('보통')
+      expect(badge.className).not.toContain('bg-yellow-100')
+    })
   })
 })
 
