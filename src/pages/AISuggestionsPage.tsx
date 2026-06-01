@@ -80,8 +80,8 @@ export function AISuggestionsPage() {
 
   const filter = {
     ...(statusFilter ? { status: statusFilter as AISuggestionStatus } : {}),
-    ...(scopeTypeFilter ? { requestedScopeType: scopeTypeFilter } : {}),
-    ...(scopeIdFilter ? { requestedScopeId: Number(scopeIdFilter) } : {}),
+    ...(scopeTypeFilter ? { targetScopeType: scopeTypeFilter } : {}),
+    ...(scopeIdFilter ? { targetScopeId: Number(scopeIdFilter) } : {}),
   }
 
   const suggestionsQuery = useSuggestions(filter)

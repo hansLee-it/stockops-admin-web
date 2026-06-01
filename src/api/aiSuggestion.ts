@@ -18,8 +18,8 @@ function buildParams(filter: AISuggestionListFilter = {}): Record<string, string
   if (filter.sourceType) params.sourceType = filter.sourceType
   if (filter.visibleToApp) params.visibleToApp = filter.visibleToApp
   if (filter.approvalMode) params.approvalMode = filter.approvalMode
-  if (filter.requestedScopeType) params.requestedScopeType = filter.requestedScopeType
-  if (filter.requestedScopeId != null) params.requestedScopeId = filter.requestedScopeId
+  if (filter.targetScopeType) params.targetScopeType = filter.targetScopeType
+  if (filter.targetScopeId != null) params.targetScopeId = filter.targetScopeId
   if (filter.page != null) params.page = filter.page
   if (filter.size != null) params.size = filter.size
 

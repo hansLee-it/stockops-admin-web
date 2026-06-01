@@ -83,8 +83,8 @@ export interface AISuggestionListFilter {
   sourceType?: string
   visibleToApp?: string
   approvalMode?: AISuggestionApprovalMode
-  requestedScopeType?: ScopeType | string
-  requestedScopeId?: number
+  targetScopeType?: ScopeType | string
+  targetScopeId?: number
   page?: number
   size?: number
 }
