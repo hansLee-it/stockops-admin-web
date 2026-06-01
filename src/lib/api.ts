@@ -11,6 +11,7 @@ import axios from 'axios'
 import { getErrorMessage, showErrorToast } from '@/lib/httpError'
 import { showToast } from '@/lib/toast'
 import { useAuthStore } from '@/stores/authStore'
+import type { LoginResponse } from '@/types/auth'
 
 /**
  * Axios instance configured for StockOps API.
@@ -19,6 +20,7 @@ import { useAuthStore } from '@/stores/authStore'
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
   timeout: 30000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -109,25 +111,19 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const token = useAuthStore.getState().token
-        if (!token) {
-          forceLogout()
-          return Promise.reject(error)
-        }
-
-        const response = await axios.post<{ accessToken: string }>(
+        const response = await axios.post<LoginResponse>(
           `${import.meta.env.VITE_API_BASE_URL ?? '/api'}/v1/auth/refresh`,
           {},
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
+            withCredentials: true,
           }
         )
 
-        const { accessToken } = response.data
-        useAuthStore.getState().setToken(accessToken)
+        const { accessToken, user } = response.data
+        useAuthStore.getState().login(accessToken, user)
 
         processQueue(null, accessToken)
 
