@@ -47,18 +47,18 @@ const CHANNEL_TYPES: { value: ChannelType; label: string }[] = [
 ]
 
 const WEBHOOK_PROVIDERS: { value: WebhookProviderType; label: string }[] = [
-  { value: 'SLACK', label: 'Slack' },
-  { value: 'NOTION', label: 'Notion' },
-  { value: 'DISCORD', label: 'Discord' },
+  { value: 'SLACK', label: '외부 메신저' },
+  { value: 'NOTION', label: '노션' },
+  { value: 'DISCORD', label: '디스코드' },
   { value: 'TEAMS', label: 'Microsoft Teams' },
-  { value: 'GENERIC', label: 'Generic' },
+  { value: 'GENERIC', label: '일반 웹훅' },
 ]
 
 function defaultChannels(): ChannelEntryRequest[] {
   return [
     { type: 'SMS', enabled: false, webhookProvider: null },
     { type: 'EMAIL', enabled: true, webhookProvider: null },
-    { type: 'WEBHOOK', enabled: false, webhookProvider: 'SLACK' },
+    { type: 'WEBHOOK', enabled: false, webhookProvider: 'GENERIC' },
   ]
 }
 
@@ -197,7 +197,7 @@ export function NotificationChannelPage() {
   const addChannel = () => {
     setFormData((prev) => ({
       ...prev,
-      channels: [...prev.channels, { type: 'WEBHOOK', enabled: false, webhookProvider: 'SLACK' }],
+      channels: [...prev.channels, { type: 'WEBHOOK', enabled: false, webhookProvider: 'GENERIC' }],
     }))
   }
 
@@ -498,7 +498,7 @@ export function NotificationChannelPage() {
                                   ? {
                                       ...ch,
                                       type: newType,
-                                      webhookProvider: newType === 'WEBHOOK' ? (ch.webhookProvider ?? 'SLACK') : null,
+                                      webhookProvider: newType === 'WEBHOOK' ? (ch.webhookProvider ?? 'GENERIC') : null,
                                     }
                                   : ch
                               ),
@@ -541,7 +541,7 @@ export function NotificationChannelPage() {
                         </label>
                         <select
                           id={`provider-${index}`}
-                          value={channel.webhookProvider ?? 'SLACK'}
+                          value={channel.webhookProvider ?? 'GENERIC'}
                           onChange={(e) => updateWebhookProvider(index, e.target.value)}
                           className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                           disabled={!channel.enabled}

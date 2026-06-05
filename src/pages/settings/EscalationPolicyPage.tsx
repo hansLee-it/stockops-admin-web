@@ -48,7 +48,7 @@ const ALL_ROLES = [
 const ALL_CHANNELS = [
   { value: 'SMS', label: 'SMS' },
   { value: 'EMAIL', label: '이메일' },
-  { value: 'SLACK', label: 'Slack' },
+  { value: 'SLACK', label: '외부 메신저' },
 ]
 
 function emptyRule(level: number): EscalationRuleRequest {

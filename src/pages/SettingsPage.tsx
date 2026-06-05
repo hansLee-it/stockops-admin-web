@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Users, Shield, Bell, Key, Database, ChevronRight, Plus, MessageCircle } from 'lucide-react'
+import { Settings, Users, Shield, Bell, Key, Database, ChevronRight, Plus } from 'lucide-react'
 
 type TabId = 'general' | 'users' | 'permissions' | 'notifications' | 'api' | 'backup'
 
@@ -25,12 +25,6 @@ const tabs: Tab[] = [
   { id: 'notifications', label: '알림', icon: Bell },
   { id: 'api', label: 'API & 연동', icon: Key },
   { id: 'backup', label: '백업 & 복구', icon: Database },
-]
-
-const mockUsers = [
-  { id: 1, name: '김점장', email: 'kim@store.com', role: '센터 관리자' },
-  { id: 2, name: '이직원', email: 'lee@store.com', role: '창고 직원' },
-  { id: 3, name: '박직원', email: 'park@store.com', role: '창고 직원' },
 ]
 
 export function SettingsPage() {
@@ -86,18 +80,37 @@ function GeneralSettings() {
       <div className="space-y-4">
         <div className="form-section">
           <h3 className="text-sm font-medium text-text-secondary mb-3">창고 정보</h3>
+          <p className="mb-4 text-sm text-text-secondary">
+            실제 센터 정보는 연동된 운영 데이터에서 불러옵니다. 이 화면에서는 비어 있는 항목만 표시합니다.
+          </p>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">창고명</label>
-              <input type="text" defaultValue="강남센터" className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg" />
+              <input
+                type="text"
+                defaultValue=""
+                placeholder="연동된 창고명이 표시됩니다"
+                className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">창고 ID</label>
-              <input type="text" defaultValue="gangnam-center" readOnly className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-200 rounded-lg bg-neutral-50" />
+              <input
+                type="text"
+                defaultValue=""
+                placeholder="연동된 창고 ID가 표시됩니다"
+                readOnly
+                className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-200 rounded-lg bg-neutral-50"
+              />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-neutral-700 mb-1">주소</label>
-              <input type="text" defaultValue="서울특별시 강남구 테헤란로 123" className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg" />
+              <input
+                type="text"
+                defaultValue=""
+                placeholder="연동된 주소가 표시됩니다"
+                className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg"
+              />
             </div>
           </div>
         </div>
@@ -141,27 +154,11 @@ function UsersSettings() {
         </button>
       </div>
 
-      <div className="space-y-3">
-        {mockUsers.map((user) => (
-          <div key={user.id} className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-            <div className="flex items-center gap-4">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary-700">
-                {user.name.slice(0, 1)}
-              </span>
-              <div>
-                <p className="font-medium text-text-primary">{user.name}</p>
-                <p className="text-sm text-text-secondary">{user.email}</p>
-                <span className="text-xs text-text-light">{user.role}</span>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button type="button" className="px-3 py-2 min-h-[40px] text-sm border border-neutral-300 rounded hover:bg-neutral-100">수정</button>
-              {user.id !== 1 && (
-                <button type="button" className="px-3 py-2 min-h-[40px] text-sm text-error border border-error rounded hover:bg-red-50">비활성화</button>
-              )}
-            </div>
-          </div>
-        ))}
+      <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-6 text-center">
+        <p className="font-medium text-text-primary">연결된 사용자 목록이 없습니다.</p>
+        <p className="mt-2 text-sm text-text-secondary">
+          사용자 목록은 실제 계정 연동 후 표시됩니다. 이 화면에서는 임시 사용자 데이터를 보여주지 않습니다.
+        </p>
       </div>
     </div>
   )
@@ -271,54 +268,30 @@ function NotificationsSettings() {
 function ApiSettings() {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-text-primary">API & 연동</h2>
+      <h2 className="text-lg font-semibold text-text-primary">API 및 연동</h2>
 
       <div className="space-y-4">
         <div className="form-section">
           <h3 className="text-sm font-medium text-text-secondary mb-3">API 키</h3>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-              <div>
-                <p className="font-medium text-text-primary">Production API Key</p>
-                <code className="text-sm text-text-secondary">sk_live_51HYs...8x2m</code>
-              </div>
-              <div className="flex gap-2">
-                <button type="button" className="px-3 py-2 min-h-[40px] text-sm border border-neutral-300 rounded hover:bg-neutral-100">복사</button>
-                <button type="button" className="px-3 py-2 min-h-[40px] text-sm text-error border border-error rounded hover:bg-red-50">재생성</button>
-              </div>
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+              <p className="font-medium text-text-primary">운영 API 키</p>
+              <p className="mt-1 text-sm text-text-secondary">보안상 이 화면에는 키 값을 표시하지 않습니다. 연동된 키가 있으면 관리 화면에서 확인합니다.</p>
             </div>
-            <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-              <div>
-                <p className="font-medium text-text-primary">Test API Key</p>
-                <code className="text-sm text-text-secondary">sk_test_51HYs...9x3n</code>
-              </div>
-              <div className="flex gap-2">
-                <button type="button" className="px-3 py-2 min-h-[40px] text-sm border border-neutral-300 rounded hover:bg-neutral-100">복사</button>
-                <button type="button" className="px-3 py-2 min-h-[40px] text-sm text-error border border-error rounded hover:bg-red-50">재생성</button>
-              </div>
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+              <p className="font-medium text-text-primary">테스트 API 키</p>
+              <p className="mt-1 text-sm text-text-secondary">현재 등록된 테스트 키가 없습니다. 테스트 연동이 완료되면 상태가 표시됩니다.</p>
             </div>
           </div>
         </div>
 
         <div className="form-section">
           <h3 className="text-sm font-medium text-text-secondary mb-3">외부 연동</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <MessageCircle className="w-5 h-5 text-primary-600" />
-                <span className="font-medium text-text-primary">슬랙</span>
-                <span className="px-2 py-0.5 text-xs bg-success/10 text-success rounded">연결됨</span>
-              </div>
-              <button type="button" className="px-3 py-2 min-h-[40px] text-sm border border-neutral-300 rounded hover:bg-neutral-100">설정</button>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <MessageCircle className="w-5 h-5 text-neutral-500" />
-                <span className="font-medium text-text-primary">카카오톡</span>
-                <span className="px-2 py-0.5 text-xs bg-neutral-200 text-text-secondary rounded">연결 안됨</span>
-              </div>
-              <button type="button" className="px-3 py-2 min-h-[40px] text-sm bg-primary-600 text-white rounded hover:bg-primary-700">연결</button>
-            </div>
+          <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-4">
+            <p className="font-medium text-text-primary">연결된 외부 알림 서비스가 없습니다.</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              외부 메신저 또는 협업 도구는 실제 연동이 완료된 뒤에만 표시합니다.
+            </p>
           </div>
         </div>
       </div>
@@ -326,16 +299,10 @@ function ApiSettings() {
   )
 }
 
-const backupHistory = [
-  { date: '2024-05-20 03:00', size: '45.2 MB', status: '완료' },
-  { date: '2024-05-19 03:00', size: '44.8 MB', status: '완료' },
-  { date: '2024-05-18 03:00', size: '44.5 MB', status: '완료' },
-]
-
 function BackupSettings() {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-text-primary">백업 & 복구</h2>
+      <h2 className="text-lg font-semibold text-text-primary">백업 및 복구</h2>
 
       <div className="space-y-6">
         <div className="p-4 bg-neutral-50 rounded-lg">
@@ -343,52 +310,31 @@ function BackupSettings() {
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
               <p className="text-xs text-text-light">마지막 백업</p>
-              <p className="font-medium">2024-05-20 03:00</p>
+              <p className="font-medium">연동 안 됨</p>
             </div>
             <div>
               <p className="text-xs text-text-light">다음 백업</p>
-              <p className="font-medium">2024-05-21 03:00</p>
+              <p className="font-medium">예약 없음</p>
             </div>
             <div>
               <p className="text-xs text-text-light">백업 주기</p>
-              <p className="font-medium">매일 03:00</p>
+              <p className="font-medium">미설정</p>
             </div>
           </div>
+          <p className="mb-4 text-sm text-text-secondary">
+            백업 서비스가 연결되지 않아 기록이 비어 있습니다. 실제 자동 백업이 설정되면 이 영역에 최신 상태가 표시됩니다.
+          </p>
           <div className="flex gap-2">
-            <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">지금 백업</button>
-            <button type="button" className="px-4 py-2 min-h-[44px] border border-neutral-300 rounded-lg hover:bg-neutral-100">백업 설정</button>
+            <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">백업 연동</button>
+            <button type="button" className="px-4 py-2 min-h-[44px] border border-neutral-300 rounded-lg hover:bg-neutral-100">연동 안내</button>
           </div>
         </div>
 
         <div>
           <h3 className="text-sm font-medium text-text-secondary mb-3">백업 이력</h3>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-neutral-200">
-                <th className="text-left py-2 px-3 text-sm font-medium text-text-secondary">날짜</th>
-                <th className="text-left py-2 px-3 text-sm font-medium text-text-secondary">크기</th>
-                <th className="text-left py-2 px-3 text-sm font-medium text-text-secondary">상태</th>
-                <th className="text-left py-2 px-3 text-sm font-medium text-text-secondary">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {backupHistory.map((backup) => (
-                <tr key={backup.date} className="border-b border-neutral-100">
-                  <td className="py-2 px-3 text-sm">{backup.date}</td>
-                  <td className="py-2 px-3 text-sm">{backup.size}</td>
-                  <td className="py-2 px-3">
-                    <span className="px-2 py-0.5 text-xs bg-success/10 text-success rounded">{backup.status}</span>
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className="flex gap-2">
-                      <button type="button" className="px-3 py-2 min-h-[36px] text-xs border border-neutral-300 rounded hover:bg-neutral-100">다운로드</button>
-                      <button type="button" className="px-3 py-2 min-h-[36px] text-xs border border-neutral-300 rounded hover:bg-neutral-100">복구</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-text-secondary">
+            백업 기록이 없습니다. 연결된 백업 서비스에서 생성된 내역만 표시됩니다.
+          </div>
         </div>
       </div>
     </div>
