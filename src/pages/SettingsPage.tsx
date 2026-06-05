@@ -598,49 +598,21 @@ function NotificationsSettings() {
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-text-primary">알림 설정</h2>
 
-      <div className="space-y-6">
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-blue-900">알림 채널 상세 설정</h3>
-              <p className="text-sm text-blue-700 mt-1">알림 유형별로 SMS, 이메일, 웹훅 채널을 설정하세요.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate('/settings/notification-channels')}
-              className="px-4 py-2 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              채널 설정 관리
-            </button>
+      <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-medium text-blue-900">알림 채널 상세 설정</h3>
+            <p className="text-sm text-blue-700 mt-1">
+              알림 채널은 별도 관리 화면에서 실제 백엔드 계약에 맞춰 설정합니다. 이 탭에서는 임시 체크박스나 저장 버튼을 제공하지 않습니다.
+            </p>
           </div>
-        </div>
-
-        <div className="form-section">
-          <h3 className="text-sm font-medium text-text-secondary mb-3">알림 채널</h3>
-          <div className="space-y-2">
-            {['앱 푸시 알림', '이메일 알림', 'SMS 알림'].map((channel, idx) => (
-              <label key={channel} className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg cursor-pointer hover:bg-neutral-100">
-                <input type="checkbox" defaultChecked={idx < 2} className="w-4 h-4 rounded" />
-                <span className="text-text-primary">{channel}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h3 className="text-sm font-medium text-text-secondary mb-3">알림 유형</h3>
-          <div className="space-y-2">
-            {['재고 부족 알림', '유통기한 임박 알림', '환경 이상 알림', 'AI 발주 제안 알림'].map((type, idx) => (
-              <label key={type} className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg cursor-pointer hover:bg-neutral-100">
-                <input type="checkbox" defaultChecked={idx < 3} className="w-4 h-4 rounded" />
-                <span className="text-text-primary">{type}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-neutral-200">
-          <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">저장</button>
+          <button
+            type="button"
+            onClick={() => navigate('/settings/notification-channels')}
+            className="px-4 py-2 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            채널 설정 관리
+          </button>
         </div>
       </div>
     </div>
