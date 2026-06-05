@@ -56,6 +56,7 @@ function createConfigs(): NotificationChannelConfig[] {
       warehouseId: null,
       alertType: 'TEMPERATURE',
       channels: [
+        { type: 'EMAIL', enabled: true, webhookProvider: null },
         { type: 'WEBHOOK', enabled: true, webhookProvider: 'TEAMS', webhookUrl: fullTeamsWebhookUrl },
       ],
       active: true,
@@ -129,7 +130,8 @@ describe('NotificationChannelPage', () => {
     expect(screen.getByText('TEMPERATURE')).toBeInTheDocument()
     expect(screen.queryByText('HUMIDITY')).not.toBeInTheDocument()
     expect(document.body).not.toHaveTextContent(fullTeamsWebhookUrl)
-    expect(screen.getByText('https://contoso.webhook.office.com/••••••••/oken')).toBeInTheDocument()
+    expect(screen.getByText('https://contoso.webhook.office.com/••••••••••••••••')).toBeInTheDocument()
+    expect(document.body).not.toHaveTextContent('oken')
   })
 
   it('shows honest empty state when a center has no Teams channels', () => {
@@ -223,6 +225,7 @@ describe('NotificationChannelPage', () => {
           alertType: 'TEMPERATURE',
           active: true,
           channels: [
+            { type: 'EMAIL', enabled: true, webhookProvider: null },
             { type: 'WEBHOOK', enabled: true, webhookProvider: 'TEAMS' },
           ],
         },
@@ -244,6 +247,7 @@ describe('NotificationChannelPage', () => {
           alertType: 'TEMPERATURE',
           active: false,
           channels: [
+            { type: 'EMAIL', enabled: true, webhookProvider: null },
             { type: 'WEBHOOK', enabled: true, webhookProvider: 'TEAMS' },
           ],
         },
@@ -256,12 +260,18 @@ describe('NotificationChannelPage', () => {
     selectCenter()
     fireEvent.click(screen.getByTitle('Teams 테스트 전송'))
 
-    expect(await screen.findByText(/성공: OK/)).toBeInTheDocument()
+    expect(await screen.findByText(/성공: Microsoft Teams 테스트 전송 성공/)).toBeInTheDocument()
 
-    testMutateAsync.mockResolvedValueOnce({ success: false, message: 'Endpoint disabled', providerType: 'TEAMS' })
+    testMutateAsync.mockResolvedValueOnce({
+      success: false,
+      message: `Endpoint disabled for ${fullTeamsWebhookUrl}`,
+      providerType: 'TEAMS',
+    })
     fireEvent.click(screen.getByTitle('Teams 테스트 전송'))
 
-    expect(await screen.findByText(/실패: Endpoint disabled/)).toBeInTheDocument()
+    expect(await screen.findByText(/실패: Microsoft Teams 테스트 전송 실패/)).toBeInTheDocument()
+    expect(document.body).not.toHaveTextContent('Endpoint disabled')
+    expect(document.body).not.toHaveTextContent(fullTeamsWebhookUrl)
   })
 
   it('deletes a Teams channel after confirmation', async () => {

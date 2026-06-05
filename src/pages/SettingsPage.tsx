@@ -8,11 +8,13 @@
 
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, ChevronRight, Database, Key, Loader2, Pencil, Plus, Settings, Shield, Bell, Trash2, Users } from 'lucide-react'
+import { AlertCircle, ChevronRight, Database, Key, Loader2, Lock, Pencil, Plus, Settings, Shield, Bell, Trash2, Users } from 'lucide-react'
 import { getAdminErrorMessage } from '@/api/admin'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
-import { useAdminUsers, useCreateAdminUser, useDeleteAdminUser, useUpdateAdminUser } from '@/hooks/useAdmin'
-import type { AdminRoleName, AdminUser } from '@/types/admin'
+import { useAdminRoles, useAdminUsers, useCreateAdminUser, useDeleteAdminUser, useUpdateAdminUser } from '@/hooks/useAdmin'
+import { useAuthStore } from '@/stores/authStore'
+import type { AdminRole, AdminRoleName, AdminUser } from '@/types/admin'
+import type { AuthenticatedUser } from '@/types/auth'
 
 type TabId = 'general' | 'users' | 'permissions' | 'notifications' | 'api' | 'backup'
 
@@ -61,6 +63,22 @@ function formatDateTime(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function isCurrentAdminUser(user: Pick<AdminUser, 'id' | 'role'>, currentUser: AuthenticatedUser | null | undefined) {
+  return currentUser?.id === user.id && currentUser.role === 'ADMIN' && user.role === 'ADMIN'
+}
+
+function getScopeSummary(scopeMetadata: AdminRole['scopeMetadata'] | AdminUser['scopeMetadata'] | null | undefined) {
+  if (!scopeMetadata) return '범위 정보 없음'
+  if (scopeMetadata.global) return '전체 범위'
+
+  const scopeLabels = [
+    scopeMetadata.centerIds.length > 0 ? `센터 ${scopeMetadata.centerIds.length}개` : null,
+    scopeMetadata.warehouseIds.length > 0 ? `창고 ${scopeMetadata.warehouseIds.length}개` : null,
+  ].filter(Boolean)
+
+  return scopeLabels.length > 0 ? scopeLabels.join(' · ') : '개별 범위 미설정'
 }
 
 export function SettingsPage() {
@@ -113,73 +131,38 @@ function GeneralSettings() {
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-text-primary">일반 설정</h2>
 
-      <div className="space-y-4">
-        <div className="form-section">
-          <h3 className="text-sm font-medium text-text-secondary mb-3">창고 정보</h3>
-          <p className="mb-4 text-sm text-text-secondary">
-            실제 센터 정보는 연동된 운영 데이터에서 불러옵니다. 이 화면에서는 비어 있는 항목만 표시합니다.
-          </p>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">창고명</label>
-              <input
-                type="text"
-                defaultValue=""
-                placeholder="연동된 창고명이 표시됩니다"
-                className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">창고 ID</label>
-              <input
-                type="text"
-                defaultValue=""
-                placeholder="연동된 창고 ID가 표시됩니다"
-                readOnly
-                className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-200 rounded-lg bg-neutral-50"
-              />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-neutral-700 mb-1">주소</label>
-              <input
-                type="text"
-                defaultValue=""
-                placeholder="연동된 주소가 표시됩니다"
-                className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg"
-              />
-            </div>
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+        <div className="flex items-start gap-3">
+          <Lock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <div>
+            <h3 className="font-semibold text-amber-900">일반 설정 저장은 아직 지원하지 않습니다.</h3>
+            <p className="mt-2 text-sm text-amber-800">
+              현재 백엔드에 `/api/v1/settings` 또는 일반 설정 컨트롤러가 없어 창고 정보, 언어, 시간대 값을 불러오거나 저장할 수 없습니다.
+              임시 값을 입력받는 대신 실제 계약이 추가될 때까지 이 영역을 비활성화합니다.
+            </p>
           </div>
         </div>
+      </div>
 
-        <div className="form-section">
-          <h3 className="text-sm font-medium text-text-secondary mb-3">시스템 설정</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">언어</label>
-              <select className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg">
-                <option value="ko">한국어</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">시간대</label>
-              <select className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg">
-                <option value="Asia/Seoul">Asia/Seoul (GMT+9)</option>
-              </select>
-            </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {[
+          { label: '창고 정보', detail: '센터/창고 관리 API 계약에서 제공될 때 표시합니다.' },
+          { label: '언어 및 시간대', detail: '일반 설정 저장 계약이 없어 변경할 수 없습니다.' },
+          { label: '운영 정책', detail: '정책 조회/수정 엔드포인트가 확정되면 연결합니다.' },
+          { label: '저장/초기화', detail: '지원되는 저장 API가 없어 버튼을 제공하지 않습니다.' },
+        ].map((item) => (
+          <div key={item.label} className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 opacity-80" aria-disabled="true">
+            <p className="font-medium text-text-primary">{item.label}</p>
+            <p className="mt-1 text-sm text-text-secondary">{item.detail}</p>
           </div>
-        </div>
-
-        <div className="flex gap-3 pt-4 border-t border-neutral-200">
-          <button type="button" className="px-4 py-2 min-h-[44px] border border-neutral-300 rounded-lg hover:bg-neutral-50">초기화</button>
-          <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">저장</button>
-        </div>
+        ))}
       </div>
     </div>
   )
 }
 
 function UsersSettings() {
+  const currentUser = useAuthStore((state) => state.user)
   const [page, setPage] = useState(0)
   const [form, setForm] = useState<UserFormState>(emptyUserForm)
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null)
@@ -236,11 +219,12 @@ function UsersSettings() {
 
     try {
       if (editingUser) {
+        const selfAdminEdit = isCurrentAdminUser(editingUser, currentUser)
         await updateUser.mutateAsync({
           id: editingUser.id,
           request: {
             name,
-            role: form.role,
+            role: selfAdminEdit ? 'ADMIN' : form.role,
           },
         })
       } else {
@@ -262,6 +246,12 @@ function UsersSettings() {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return
     setActionError(null)
+
+    if (isCurrentAdminUser(deleteTarget, currentUser)) {
+      setActionError('현재 로그인한 관리자의 ADMIN 권한은 직접 제거할 수 없습니다. 다른 관리자에게 변경을 요청하세요.')
+      setDeleteTarget(null)
+      return
+    }
 
     try {
       await deleteUser.mutateAsync(deleteTarget.id)
@@ -293,6 +283,10 @@ function UsersSettings() {
 
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
         계정 비활성화/재활성화는 백엔드 엔드포인트가 없어 현재 지원하지 않습니다. 이 화면에서는 상태 변경 버튼을 비활성화하고, 삭제만 실제 API로 처리합니다.
+      </div>
+
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+        현재 로그인한 관리자의 ADMIN 역할은 이 화면에서 제거할 수 없습니다. 본인 계정 삭제와 역할 강등을 막아 관리자 접근 권한이 사라지는 상황을 예방합니다.
       </div>
 
       {actionError && (
@@ -356,13 +350,16 @@ function UsersSettings() {
                 id="user-role"
                 value={form.role}
                 onChange={(event) => setForm((current) => ({ ...current, role: event.target.value as AdminRoleName }))}
-                disabled={isSaving}
+                disabled={isSaving || (editingUser ? isCurrentAdminUser(editingUser, currentUser) : false)}
                 className="w-full px-3 py-2 min-h-[44px] text-base border border-neutral-300 rounded-lg"
               >
                 {userRoles.map((role) => (
                   <option key={role} value={role}>{role}</option>
                 ))}
               </select>
+              {editingUser && isCurrentAdminUser(editingUser, currentUser) && (
+                <p className="mt-1 text-xs text-amber-700">본인 관리자 계정의 ADMIN 역할은 직접 제거할 수 없습니다.</p>
+              )}
             </div>
           </div>
 
@@ -417,7 +414,10 @@ function UsersSettings() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {users.map((user) => {
+                  const selfAdmin = isCurrentAdminUser(user, currentUser)
+
+                  return (
                   <tr key={user.id} className="border-b border-neutral-100 last:border-0">
                     <td className="px-4 py-3 text-sm text-text-primary">{user.email}</td>
                     <td className="px-4 py-3 text-sm text-text-primary">{user.name}</td>
@@ -448,7 +448,9 @@ function UsersSettings() {
                           type="button"
                           onClick={() => setDeleteTarget(user)}
                           aria-label={`${user.email} 삭제`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                          disabled={selfAdmin}
+                          title={selfAdmin ? '현재 로그인한 관리자의 ADMIN 접근 권한 보호를 위해 본인 삭제는 차단됩니다.' : undefined}
+                          className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:border-neutral-200 disabled:text-neutral-400 disabled:hover:bg-transparent"
                         >
                           <Trash2 className="h-4 w-4" />
                           삭제
@@ -456,7 +458,8 @@ function UsersSettings() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -501,46 +504,89 @@ function UsersSettings() {
 }
 
 function PermissionsSettings() {
-  const features = ['재고 조회', '재고 수정', '입출고 등록', '재고 조정', '사용자 관리', '설정 변경']
-  const roles = ['점주', '창고관리자', '직원', '감사자']
+  const rolesQuery = useAdminRoles()
+  const roles = rolesQuery.data ?? []
+  const hasBackendPermissions = roles.some((role) => Array.isArray(role.permissions) && role.permissions.length > 0)
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-text-primary">권한 설정</h2>
+      <div>
+        <h2 className="text-lg font-semibold text-text-primary">권한 설정</h2>
+        <p className="mt-1 text-sm text-text-secondary">
+          역할 목록은 실제 `/api/v1/roles` 응답에서 조회하며, 권한 변경은 백엔드 쓰기 계약이 없어 읽기 전용으로 표시합니다.
+        </p>
+      </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-neutral-200">
-              <th className="text-left py-3 px-4 text-sm font-medium text-text-secondary">기능</th>
-              {roles.map((role) => (
-                <th key={role} className="text-center py-3 px-4 text-sm font-medium text-text-secondary">{role}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {features.map((feature) => (
-              <tr key={feature} className="border-b border-neutral-100">
-                <td className="py-3 px-4 text-text-primary">{feature}</td>
-                {roles.map((_, roleIdx) => (
-                  <td key={roleIdx} className="text-center py-3 px-4">
-                    <input
-                      type="checkbox"
-                      disabled={roleIdx === 0}
-                      defaultChecked={roleIdx === 0 || roleIdx === 1}
-                      className="w-4 h-4 rounded"
-                    />
-                  </td>
-                ))}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        역할-권한 매트릭스 저장 엔드포인트와 권한 카탈로그 응답이 확인되지 않았습니다. 정적 체크박스나 임시 권한을 만들지 않고, 백엔드가 제공하는 역할 정보만 표시합니다.
+      </div>
+
+      {rolesQuery.isLoading && (
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-text-secondary" role="status">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          역할 목록을 불러오는 중입니다.
+        </div>
+      )}
+
+      {rolesQuery.isError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center" role="alert">
+          <p className="font-medium text-red-800">역할 목록을 불러오지 못했습니다.</p>
+          <p className="mt-2 text-sm text-red-700">{getAdminErrorMessage(rolesQuery.error, '역할 목록 조회 중 오류가 발생했습니다.')}</p>
+          <button type="button" onClick={() => rolesQuery.refetch()} className="mt-4 px-4 py-2 min-h-[44px] rounded-lg border border-red-300 bg-white text-red-700 hover:bg-red-50">
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {!rolesQuery.isLoading && !rolesQuery.isError && roles.length === 0 && (
+        <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-6 text-center">
+          <p className="font-medium text-text-primary">표시할 역할이 없습니다.</p>
+          <p className="mt-2 text-sm text-text-secondary">`GET /api/v1/roles` 응답에 포함된 역할만 표시합니다. 임시 역할은 만들지 않습니다.</p>
+        </div>
+      )}
+
+      {!rolesQuery.isLoading && !rolesQuery.isError && roles.length > 0 && (
+        <div className="overflow-x-auto rounded-xl border border-neutral-200">
+          <table className="w-full min-w-[720px]">
+            <thead className="bg-neutral-50">
+              <tr className="border-b border-neutral-200">
+                <th className="px-4 py-3 text-left text-sm font-medium text-text-secondary">역할</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-text-secondary">설명</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-text-secondary">데이터 범위</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-text-secondary">권한</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-text-secondary">생성일</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {roles.map((role) => (
+                <tr key={role.id} className="border-b border-neutral-100 last:border-0">
+                  <td className="px-4 py-3 text-sm font-medium text-text-primary">{role.name}</td>
+                  <td className="px-4 py-3 text-sm text-text-secondary">{role.description || '설명 없음'}</td>
+                  <td className="px-4 py-3 text-sm text-text-secondary">{getScopeSummary(role.scopeMetadata)}</td>
+                  <td className="px-4 py-3 text-sm text-text-secondary">
+                    {role.permissions && role.permissions.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {role.permissions.map((permission) => (
+                          <span key={permission} className="rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-700">{permission}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span>백엔드 응답에 권한 목록이 포함되지 않았습니다.</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-text-secondary">{formatDateTime(role.createdAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      <div className="pt-4 border-t border-neutral-200">
-        <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">권한 저장</button>
-      </div>
+      {!hasBackendPermissions && !rolesQuery.isLoading && !rolesQuery.isError && roles.length > 0 && (
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm text-text-secondary">
+          현재 역할 응답에는 권한 코드 목록이 포함되지 않습니다. 권한 카탈로그와 역할-권한 수정 API가 추가되면 이 영역을 매트릭스로 전환합니다.
+        </div>
+      )}
     </div>
   )
 }
@@ -612,11 +658,11 @@ function ApiSettings() {
           <div className="space-y-3">
             <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
               <p className="font-medium text-text-primary">운영 API 키</p>
-              <p className="mt-1 text-sm text-text-secondary">보안상 이 화면에는 키 값을 표시하지 않습니다. 연동된 키가 있으면 관리 화면에서 확인합니다.</p>
+              <p className="mt-1 text-sm text-text-secondary">API 키 관리 백엔드 계약이 없어 생성, 조회, 폐기를 지원하지 않습니다. 실제 키 값이나 상태를 임시로 표시하지 않습니다.</p>
             </div>
             <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
               <p className="font-medium text-text-primary">테스트 API 키</p>
-              <p className="mt-1 text-sm text-text-secondary">현재 등록된 테스트 키가 없습니다. 테스트 연동이 완료되면 상태가 표시됩니다.</p>
+              <p className="mt-1 text-sm text-text-secondary">테스트 키 관리 엔드포인트가 확인되지 않아 비활성화했습니다.</p>
             </div>
           </div>
         </div>
@@ -624,9 +670,9 @@ function ApiSettings() {
         <div className="form-section">
           <h3 className="text-sm font-medium text-text-secondary mb-3">외부 연동</h3>
           <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-4">
-            <p className="font-medium text-text-primary">연결된 외부 알림 서비스가 없습니다.</p>
+            <p className="font-medium text-text-primary">외부 연동 관리는 아직 지원하지 않습니다.</p>
             <p className="mt-1 text-sm text-text-secondary">
-              외부 메신저 또는 협업 도구는 실제 연동이 완료된 뒤에만 표시합니다.
+              API 키/외부 연동 관리 계약이 확정되기 전까지 연결 상태나 설정 버튼을 표시하지 않습니다.
             </p>
           </div>
         </div>
@@ -657,13 +703,9 @@ function BackupSettings() {
               <p className="font-medium">미설정</p>
             </div>
           </div>
-          <p className="mb-4 text-sm text-text-secondary">
-            백업 서비스가 연결되지 않아 기록이 비어 있습니다. 실제 자동 백업이 설정되면 이 영역에 최신 상태가 표시됩니다.
+          <p className="text-sm text-text-secondary">
+            백업/복구 API 계약이 없어 백업 실행, 복구, 스케줄 변경을 지원하지 않습니다. 실제 백업 상태를 임시 데이터로 표시하지 않습니다.
           </p>
-          <div className="flex gap-2">
-            <button type="button" className="px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700">백업 연동</button>
-            <button type="button" className="px-4 py-2 min-h-[44px] border border-neutral-300 rounded-lg hover:bg-neutral-100">연동 안내</button>
-          </div>
         </div>
 
         <div>

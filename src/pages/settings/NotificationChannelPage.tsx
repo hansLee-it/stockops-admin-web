@@ -50,6 +50,8 @@ type TestResultState = {
 }
 
 const MASKED_WEBHOOK_FALLBACK = 'https://••••••••••••••••/Teams webhook 저장됨'
+const TEST_SUCCESS_MESSAGE = 'Microsoft Teams 테스트 전송 성공'
+const TEST_FAILURE_MESSAGE = 'Microsoft Teams 테스트 전송 실패'
 
 function defaultChannels(): TeamsChannelEntryRequest[] {
   return [
@@ -78,10 +80,7 @@ function maskWebhookUrl(value?: string | null): string {
 
   try {
     const url = new URL(value)
-    const pathParts = url.pathname.split('/').filter(Boolean)
-    const lastPart = pathParts.at(-1)
-    const suffix = lastPart ? lastPart.slice(-4) : ''
-    return `${url.protocol}//${url.hostname}/••••••••${suffix ? `/${suffix}` : ''}`
+    return `${url.protocol}//${url.hostname}/••••••••••••••••`
   } catch {
     return '••••••••••••••••'
   }
@@ -97,41 +96,47 @@ function isValidTeamsWebhookUrl(value: string): boolean {
   }
 }
 
-function buildTeamsRequest(formData: TeamsFormData): NotificationChannelConfigRequest {
+function buildTeamsRequest(formData: TeamsFormData, existingConfig?: NotificationChannelConfig): NotificationChannelConfigRequest {
   const teamsChannel = formData.channels[0]
   const trimmedWebhookUrl = teamsChannel.webhookUrl?.trim()
+  const nextTeamsChannel: TeamsChannelEntryRequest = {
+    type: 'WEBHOOK',
+    enabled: teamsChannel.enabled,
+    webhookProvider: 'TEAMS',
+    ...(trimmedWebhookUrl ? { webhookUrl: trimmedWebhookUrl } : {}),
+  }
+  const channels = existingConfig
+    ? existingConfig.channels.map((channel) => (
+        channel.type === 'WEBHOOK' && channel.webhookProvider === 'TEAMS'
+          ? nextTeamsChannel
+          : {
+              type: channel.type,
+              enabled: channel.enabled,
+              webhookProvider: channel.webhookProvider,
+            }
+      ))
+    : [nextTeamsChannel]
 
   return {
     centerId: formData.centerId,
     warehouseId: formData.warehouseId,
     alertType: formData.alertType,
     active: formData.active,
-    channels: [
-      {
-        type: 'WEBHOOK',
-        enabled: teamsChannel.enabled,
-        webhookProvider: 'TEAMS',
-        ...(trimmedWebhookUrl ? { webhookUrl: trimmedWebhookUrl } : {}),
-      },
-    ],
+    channels,
   }
 }
 
 function buildTeamsRequestFromConfig(config: NotificationChannelConfig, active: boolean): NotificationChannelConfigRequest {
-  const teamsChannel = findTeamsChannel(config)
-
   return {
     centerId: config.centerId,
     warehouseId: config.warehouseId,
     alertType: config.alertType,
     active,
-    channels: [
-      {
-        type: 'WEBHOOK',
-        enabled: teamsChannel?.enabled ?? true,
-        webhookProvider: 'TEAMS',
-      },
-    ],
+    channels: config.channels.map((channel) => ({
+      type: channel.type,
+      enabled: channel.enabled,
+      webhookProvider: channel.webhookProvider,
+    })),
   }
 }
 
@@ -226,7 +231,7 @@ export function NotificationChannelPage() {
       return
     }
 
-    const request = buildTeamsRequest(formData)
+    const request = buildTeamsRequest(formData, editingConfig ?? undefined)
 
     try {
       if (editingConfig) {
@@ -262,18 +267,18 @@ export function NotificationChannelPage() {
         ...prev,
         [configId]: {
           status: result.success ? 'success' : 'failure',
-          message: result.message,
+          message: result.success ? TEST_SUCCESS_MESSAGE : TEST_FAILURE_MESSAGE,
         },
       }))
       if (result.success) {
         showToast({ message: 'Microsoft Teams 테스트 전송에 성공했습니다.', variant: 'success' })
       } else {
-        showToast({ message: `Microsoft Teams 테스트 전송 실패: ${result.message}`, variant: 'error' })
+        showToast({ message: TEST_FAILURE_MESSAGE, variant: 'error' })
       }
     } catch {
       setTestResults((prev) => ({
         ...prev,
-        [configId]: { status: 'failure', message: '요청 실패' },
+        [configId]: { status: 'failure', message: TEST_FAILURE_MESSAGE },
       }))
     } finally {
       setTestingConfigId(null)
