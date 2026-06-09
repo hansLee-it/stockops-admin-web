@@ -39,6 +39,7 @@ const AdminPage = lazyPage(() => import('@/pages/admin/AdminPage'), 'AdminPage')
 const NoticeManagement = lazyPage(() => import('@/pages/admin/NoticeManagement'), 'NoticeManagement')
 const AuditLogViewer = lazyPage(() => import('@/pages/admin/AuditLogViewer'), 'AuditLogViewer')
 const AISuggestionsPage = lazyPage(() => import('@/pages/AISuggestionsPage'), 'AISuggestionsPage')
+const AiChatPage = lazyPage(() => import('@/pages/AiChatPage'), 'AiChatPage')
 const EscalationPolicyPage = lazyPage(() => import('@/pages/settings/EscalationPolicyPage'), 'EscalationPolicyPage')
 const NotificationChannelPage = lazyPage(
   () => import('@/pages/settings/NotificationChannelPage'),
@@ -110,6 +111,7 @@ function App() {
           <Route path="environment" element={routeElement(<EnvironmentPage />)} />
           <Route path="reports" element={routeElement(<ReportsPage />)} />
           <Route path="ai" element={routeElement(<AIFeaturesPage />)} />
+          <Route path="ai/chat" element={routeElement(<AiChatPage />)} />
           <Route path="admin" element={routeElement(<AdminPage />)} />
           <Route path="admin/notices" element={routeElement(<NoticeManagement />)} />
           <Route path="admin/audit-logs" element={routeElement(<AuditLogViewer />)} />
