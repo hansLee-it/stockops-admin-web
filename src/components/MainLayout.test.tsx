@@ -54,4 +54,18 @@ describe('MainLayout page title lookup', () => {
     expect(screen.getByRole('heading', { name: 'AI 제안 관리' })).toBeInTheDocument()
     expect(screen.getByText('ai suggestions page')).toBeInTheDocument()
   })
+
+  it('mounts the floating AI chat drawer toggle', () => {
+    render(
+      <MemoryRouter initialEntries={['/admin/ai-suggestions']}>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route path="admin/ai-suggestions" element={<div>ai suggestions page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(screen.getByRole('button', { name: 'AI 챗봇 열기' })).toBeInTheDocument()
+  })
 })

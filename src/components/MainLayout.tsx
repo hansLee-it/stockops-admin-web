@@ -12,6 +12,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { AIChatDrawer } from '@/components/ai/AIChatDrawer'
 import {
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine,
   MapPin, LogOut, Clock, Settings,
@@ -30,6 +31,7 @@ interface NavItem {
 const allNavItems: NavItem[] = [
   { to: '/dashboard', label: '대시보드', icon: LayoutDashboard },
   { to: '/environment', label: '환경 모니터링', icon: Thermometer },
+  { to: '/environment/alerts', label: '환경 알림 처리', icon: Shield },
   { to: '/centers', label: '센터 관리', icon: Building2 },
   { to: '/warehouses', label: '창고 관리', icon: Warehouse },
   { to: '/products', label: '상품 관리', icon: Package },
@@ -409,6 +411,7 @@ export function MainLayout() {
           <span className="text-[11px] mt-0.5 font-medium">더보기</span>
         </button>
       </nav>
+      <AIChatDrawer />
     </div>
   )
 }
