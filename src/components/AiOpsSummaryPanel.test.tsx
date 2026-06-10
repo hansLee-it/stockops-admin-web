@@ -27,6 +27,7 @@ function sampleSummary(overrides: Partial<AiOpsSummaryResponse> = {}): AiOpsSumm
       criticalExpiry: 1,
       warningExpiry: 0,
       overdueShipments: 1,
+      inventoryBelowSafetyStock: 4,
     },
     confidenceCaveat: '추천 3건, 센서 알림 2건, 만료 경보 1건, 지연 PO 1건을 기반으로 생성되었습니다.',
     ...overrides,

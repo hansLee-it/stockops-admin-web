@@ -43,6 +43,7 @@ const SOURCE_LABELS: Record<string, string> = {
   criticalExpiry: '만료(긴급)',
   warningExpiry: '만료(경고)',
   overdueShipments: '지연 PO',
+  inventoryBelowSafetyStock: '안전재고 미달',
 }
 
 /**

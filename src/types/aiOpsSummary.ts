@@ -20,6 +20,7 @@ export interface AiOpsSummarySourceCounts {
   criticalExpiry: number
   warningExpiry: number
   overdueShipments: number
+  inventoryBelowSafetyStock: number
   [key: string]: number
 }
 
