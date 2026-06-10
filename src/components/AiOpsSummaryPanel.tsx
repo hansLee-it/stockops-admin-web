@@ -44,6 +44,7 @@ const SOURCE_LABELS: Record<string, string> = {
   warningExpiry: '만료(경고)',
   overdueShipments: '지연 PO',
   inventoryBelowSafetyStock: '안전재고 미달',
+  recentPrivilegeEvents: '권한 변경 (24h)',
 }
 
 /**

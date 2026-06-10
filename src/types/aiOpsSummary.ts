@@ -21,6 +21,8 @@ export interface AiOpsSummarySourceCounts {
   warningExpiry: number
   overdueShipments: number
   inventoryBelowSafetyStock: number
+  /** Privilege-sensitive entity changes (User/Role/Permission/RolePermission) in last 24h (§3.2). */
+  recentPrivilegeEvents: number
   [key: string]: number
 }
 
