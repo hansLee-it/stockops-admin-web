@@ -24,6 +24,7 @@ import {
   ShoppingCart,
 } from 'lucide-react'
 import { EmptyState } from '@/components/common/EmptyState'
+import { AiExplanationPanel } from '@/components/AiExplanationPanel'
 
 interface CenterOption {
   id: number
@@ -349,11 +350,18 @@ function RecommendationRow({ recommendation: rec, isApproving, isOnline, onAppro
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
             <span className="text-xs">확인된 출고 이력이 없어 예측을 생성할 수 없습니다</span>
           </div>
-        ) : rec.explanationSummary ? (
-          <div className="text-xs text-text-secondary truncate" title={rec.explanationSummary} data-testid={`ai-rec-explanation-${rec.id}`}>
-            {rec.explanationSummary}
-          </div>
-        ) : null}
+        ) : (
+          <>
+            {rec.explanationSummary && (
+              <div className="text-xs text-text-secondary truncate" title={rec.explanationSummary} data-testid={`ai-rec-explanation-${rec.id}`}>
+                {rec.explanationSummary}
+              </div>
+            )}
+            {(rec.status === 'READY_FOR_APPROVAL' || rec.status === 'APPROVED_TO_DRAFT') && (
+              <AiExplanationPanel recommendationId={rec.id} />
+            )}
+          </>
+        )}
       </td>
       <td className="px-4 py-3" data-testid={`ai-rec-actions-${rec.id}`}>
         {rec.status === 'READY_FOR_APPROVAL' && (
