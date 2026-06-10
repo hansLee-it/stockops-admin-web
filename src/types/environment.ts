@@ -151,3 +151,20 @@ export interface ControllerCommandRequest {
   status: 'on' | 'off'
   outputLevel: number
 }
+
+/**
+ * Live sensor measurement received directly over MQTT (WebSocket transport) by admin-web.
+ * Matches the Sensimul live telemetry payload that the API server previously ingested.
+ */
+export interface MqttSensorPayload {
+  siteId: string
+  sensorId: string
+  sensorType?: SensorType | string
+  valueKind?: string | null
+  value: number
+  unit?: string | null
+  status: string
+  timestamp: string
+  sequenceId?: number
+  schemaVersion?: string
+}

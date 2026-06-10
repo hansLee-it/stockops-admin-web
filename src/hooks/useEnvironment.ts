@@ -20,7 +20,6 @@ import {
   getEnvironmentDashboard,
   getSensorByExternalIds,
   getSensorById,
-  getSensorHistory,
   getSensors,
   reactivateController,
   reactivateSensor,
@@ -35,12 +34,10 @@ import type {
   SensorAlert,
   SensorDevice,
   SensorDeviceRequest,
-  SensorHistory,
 } from '@/types/environment'
 
 const DASHBOARD_STALE_TIME = 30000
 const ALERTS_STALE_TIME = 30000
-const HISTORY_STALE_TIME = 60000
 
 export function useEnvironmentDashboard(): UseQueryResult<DashboardResponse, AxiosError> {
   return useQuery({
@@ -56,23 +53,6 @@ export function useEnvironmentAlerts(days = 30): UseQueryResult<SensorAlert[], A
     queryKey: ['environment', 'alerts', days],
     queryFn: () => getEnvironmentAlerts(days),
     staleTime: ALERTS_STALE_TIME,
-  })
-}
-
-export function useSensorHistory(
-  sensorId: number | null,
-  days = 30,
-): UseQueryResult<SensorHistory[], AxiosError> {
-  return useQuery({
-    queryKey: ['environment', 'history', sensorId, days],
-    queryFn: () => {
-      if (sensorId === null) {
-        throw new Error('Sensor ID is required')
-      }
-      return getSensorHistory(sensorId, days)
-    },
-    enabled: sensorId !== null,
-    staleTime: HISTORY_STALE_TIME,
   })
 }
 

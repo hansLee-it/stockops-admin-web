@@ -29,13 +29,12 @@ import {
   useReactivateController,
   useReactivateSensor,
   useSensors,
-  useSensorHistory,
   useUpdateController,
   useUpdateSensor,
   useControllers,
 } from '@/hooks/useEnvironment'
 import { useControllerCommand, useControllerCommands } from '@/hooks/useControllerCommand'
-import { useWebSocket } from '@/hooks/useWebSocket'
+import { useMqttSensorReadings } from '@/hooks/useMqttSensorReadings'
 import type { ConnectionStatus } from '@/hooks/useWebSocket'
 import type {
   AlertSeverity,
@@ -139,41 +138,55 @@ export function EnvironmentPage() {
   const sensors = useMemo(() => sensorsQuery.data?.content ?? [], [sensorsQuery.data?.content])
   const controllers = useMemo(() => controllersQuery.data?.content ?? [], [controllersQuery.data?.content])
 
-  const { lastMessage, connectionStatus } = useWebSocket('/topic/environment')
+  // admin-web subscribes to live sensor telemetry directly over MQTT (WebSocket transport)
+  // instead of overlaying API-server WebSocket events. No measurement persistence is required.
+  const mqttLive = useMqttSensorReadings({
+    url: import.meta.env.VITE_MQTT_WS_URL,
+    username: import.meta.env.VITE_MQTT_USERNAME,
+    password: import.meta.env.VITE_MQTT_PASSWORD,
+    topicFilter: import.meta.env.VITE_MQTT_SENSOR_TOPIC_FILTER || 'sensimul/sites/+/sensors/+',
+  })
+  const connectionStatus: ConnectionStatus =
+    mqttLive.connectionStatus === 'connected' ? 'connected'
+      : mqttLive.connectionStatus === 'connecting' ? 'connecting'
+        : mqttLive.connectionStatus === 'error' ? 'disconnected'
+          : 'fallback'
+
   const [liveReadings, setLiveReadings] = useState<Map<number, DashboardLatestReading>>(new Map())
+  const [recentReadings, setRecentReadings] = useState<DashboardLatestReading[]>([])
 
-  useEffect(() => {
-    if (!lastMessage || lastMessage.eventType !== 'ENV_SENSOR') return
-
-    const payload = lastMessage as unknown as {
-      sensorId: string
-      sensorType: string
-      value: number
-      locationId: string
-      timestamp: string
-    }
-
-    const sensor = sensors.find((s) => s.sensorId === payload.sensorId)
-    if (!sensor) return
-
-    /* eslint-disable react-hooks/set-state-in-effect -- realtime sensor payloads update the live readings cache. */
-    setLiveReadings((prev) => {
-      const next = new Map(prev)
-      next.set(sensor.id, {
+  const mqttLatestReadings = useMemo<DashboardLatestReading[]>(() => {
+    return sensors.flatMap((sensor) => {
+      const live = mqttLive.readings.get(`${sensor.siteId}/${sensor.sensorId}`)
+      if (!live) return []
+      const sensorType = typeof live.sensorType === 'string' ? null : (live.sensorType ?? null)
+      return [{
         sensorId: sensor.id,
         sensorName: sensor.name,
-        sensorType: payload.sensorType as SensorType,
-        location: payload.locationId,
-        value: payload.value,
-        valueKind: payload.sensorType,
-        unit: inferUnitFromSensorType(payload.sensorType as SensorType),
-        status: 'NORMAL',
-        recordedAt: payload.timestamp,
-      })
+        sensorType: sensorType ?? sensor.sensorType,
+        location: sensor.location,
+        value: live.value,
+        valueKind: live.valueKind ?? (typeof live.sensorType === 'string' ? live.sensorType : null),
+        unit: live.unit ?? inferUnitFromSensorType(sensor.sensorType),
+        status: live.status,
+        recordedAt: live.timestamp,
+      }]
+    })
+  }, [mqttLive.readings, sensors])
+
+  useEffect(() => {
+    if (mqttLatestReadings.length === 0) return
+    /* eslint-disable react-hooks/set-state-in-effect -- realtime MQTT readings update the live caches. */
+    setLiveReadings(() => {
+      const next = new Map<number, DashboardLatestReading>()
+      for (const reading of mqttLatestReadings) {
+        next.set(reading.sensorId, reading)
+      }
       return next
     })
+    setRecentReadings((current) => [...mqttLatestReadings, ...current].slice(0, 100))
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [lastMessage, sensors])
+  }, [mqttLatestReadings])
 
   const mergedLatestReadings = useMemo(() => {
     const base = dashboardQuery.data?.latestReadings ?? []
@@ -219,7 +232,6 @@ export function EnvironmentPage() {
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [selectedController])
 
-  const historyQuery = useSensorHistory(selectedSensorId, 30)
   const commandHistoryQuery = useControllerCommands(selectedControllerId, 10)
 
   const createSensorMutation = useCreateSensor()
@@ -244,7 +256,6 @@ export function EnvironmentPage() {
       queryClient.invalidateQueries({ queryKey: ['environment', 'alerts'] }),
       queryClient.invalidateQueries({ queryKey: ['environment', 'sensors'] }),
       queryClient.invalidateQueries({ queryKey: ['environment', 'controllers'] }),
-      queryClient.invalidateQueries({ queryKey: ['environment', 'history'] }),
     ])
   }
 
@@ -736,42 +747,36 @@ export function EnvironmentPage() {
         </section>
 
         <section className="rounded-xl border border-neutral-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold">📚 센서 히스토리</h2>
-          {selectedSensorId === null ? (
-            <EmptyState message="히스토리를 볼 센서를 선택해주세요." />
-          ) : historyQuery.isLoading ? (
-            <SectionLoading label="센서 히스토리 로딩 중" />
-          ) : historyQuery.error ? (
-            <ErrorPanel title="센서 히스토리를 불러오지 못했습니다." message={historyQuery.error.message} />
-          ) : (historyQuery.data?.length ?? 0) > 0 ? (
+          <h2 className="mb-4 text-lg font-semibold">📡 실시간 센서 수신 (세션)</h2>
+          {recentReadings.length > 0 ? (
             <div className="max-h-[520px] overflow-auto">
               <table className="w-full min-w-[520px]">
                 <thead>
                   <tr className="border-b border-neutral-200 text-left text-sm text-text-secondary">
                     <th className="px-3 py-2">시각</th>
+                    <th className="px-3 py-2">센서</th>
                     <th className="px-3 py-2">값</th>
                     <th className="px-3 py-2">종류</th>
                     <th className="px-3 py-2">상태</th>
-                    <th className="px-3 py-2">시퀀스</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {historyQuery.data?.map((row, index) => (
-                    <tr key={`${row.recordedAt}-${row.sequenceId ?? index}`} className="border-b border-neutral-100">
+                  {recentReadings.map((row, index) => (
+                    <tr key={`${row.sensorId}-${row.recordedAt}-${index}`} className="border-b border-neutral-100">
                       <td className="px-3 py-2 text-sm text-text-secondary">{formatDateTime(row.recordedAt)}</td>
+                      <td className="px-3 py-2 text-sm text-text-secondary">{row.sensorName ?? row.sensorId}</td>
                       <td className="px-3 py-2 font-medium text-text-primary">
                         {formatReadingValue(row.value, row.unit)}
                       </td>
                       <td className="px-3 py-2 text-sm text-text-secondary">{row.valueKind}</td>
                       <td className="px-3 py-2 text-sm text-text-secondary">{row.status}</td>
-                      <td className="px-3 py-2 text-sm text-text-light">{row.sequenceId ?? '-'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <EmptyState message="선택한 센서의 최근 30일 히스토리가 없습니다." />
+            <EmptyState message="MQTT 실시간 수신 데이터가 아직 없습니다. 브로커 연결 후 표시됩니다." />
           )}
         </section>
       </div>

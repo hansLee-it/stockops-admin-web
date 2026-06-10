@@ -16,7 +16,6 @@ import type {
   SensorAlert,
   SensorDevice,
   SensorDeviceRequest,
-  SensorHistory,
 } from '@/types/environment'
 
 function emptyPageResponse<T>(page = 0, size = 20): PageResponse<T> {
@@ -154,13 +153,6 @@ export async function getEnvironmentDashboard(): Promise<DashboardResponse> {
 export async function getEnvironmentAlerts(days = 30): Promise<SensorAlert[]> {
   const response = await api.get<SensorAlert[]>('/v1/environment/alerts', {
     params: { days },
-  })
-  return Array.isArray(response.data) ? response.data : []
-}
-
-export async function getSensorHistory(sensorId: number, days = 30): Promise<SensorHistory[]> {
-  const response = await api.get<SensorHistory[]>('/v1/environment/history', {
-    params: { sensorId, days },
   })
   return Array.isArray(response.data) ? response.data : []
 }
