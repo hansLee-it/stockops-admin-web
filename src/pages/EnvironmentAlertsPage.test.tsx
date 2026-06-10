@@ -55,4 +55,17 @@ describe('EnvironmentAlertsPage', () => {
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     )
   })
+
+  it('filters alerts by severity', () => {
+    render(<EnvironmentAlertsPage />)
+
+    expect(screen.getByText('처리 필요 (1)')).toBeInTheDocument()
+    expect(screen.getByText('처리 내역 (1)')).toBeInTheDocument()
+
+    // Filter to WARNING only: the active CRITICAL alert drops out, the handled WARNING stays.
+    fireEvent.click(screen.getByRole('button', { name: '주의' }))
+
+    expect(screen.getByText('처리 필요 (0)')).toBeInTheDocument()
+    expect(screen.getByText('처리 내역 (1)')).toBeInTheDocument()
+  })
 })

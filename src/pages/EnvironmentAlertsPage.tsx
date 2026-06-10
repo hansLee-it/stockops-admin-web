@@ -44,31 +44,53 @@ function formatDateTime(value: string | null): string {
   return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('ko-KR')
 }
 
+const PAGE_SIZE = 10
+
+type SeverityFilter = 'ALL' | 'CRITICAL' | 'WARNING'
+
 export function EnvironmentAlertsPage() {
   const alertsQuery = useEnvironmentAlerts(30)
   const acknowledgeMutation = useAcknowledgeEnvironmentAlert()
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [note, setNote] = useState('')
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('ALL')
+  const [sensorQuery, setSensorQuery] = useState('')
+  const [activeVisible, setActiveVisible] = useState(PAGE_SIZE)
+  const [handledVisible, setHandledVisible] = useState(PAGE_SIZE)
 
   const alerts = useMemo(() => alertsQuery.data ?? [], [alertsQuery.data])
+
+  const matchesFilters = useMemo(() => {
+    const query = sensorQuery.trim().toLowerCase()
+    return (alert: SensorAlert): boolean => {
+      if (severityFilter !== 'ALL' && alert.severity !== severityFilter) return false
+      if (query) {
+        const haystack = `${alert.sensorName ?? ''} ${alert.sensorId ?? ''} ${alert.message}`.toLowerCase()
+        if (!haystack.includes(query)) return false
+      }
+      return true
+    }
+  }, [severityFilter, sensorQuery])
 
   const activeAlerts = useMemo(
     () =>
       alerts
         .filter((alert) => statusOf(alert) === 'ACTIVE')
+        .filter(matchesFilters)
         .sort((a, b) => {
           if (a.severity !== b.severity) return a.severity === 'CRITICAL' ? -1 : 1
           return b.createdAt.localeCompare(a.createdAt)
         }),
-    [alerts],
+    [alerts, matchesFilters],
   )
 
   const handledAlerts = useMemo(
     () =>
       alerts
         .filter((alert) => statusOf(alert) !== 'ACTIVE')
+        .filter(matchesFilters)
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [alerts],
+    [alerts, matchesFilters],
   )
 
   const selected = useMemo(
@@ -98,6 +120,31 @@ export function EnvironmentAlertsPage() {
         </p>
       </header>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1 rounded-lg border border-neutral-200 p-1" role="group" aria-label="심각도 필터">
+          {(['ALL', 'CRITICAL', 'WARNING'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => { setSeverityFilter(value); setActiveVisible(PAGE_SIZE); setHandledVisible(PAGE_SIZE) }}
+              className={`rounded px-3 py-1 text-sm transition-colors ${
+                severityFilter === value ? 'bg-primary-600 text-white' : 'text-text-secondary hover:bg-neutral-100'
+              }`}
+            >
+              {value === 'ALL' ? '전체' : value === 'CRITICAL' ? '위험' : '주의'}
+            </button>
+          ))}
+        </div>
+        <input
+          type="search"
+          value={sensorQuery}
+          onChange={(event) => { setSensorQuery(event.target.value); setActiveVisible(PAGE_SIZE); setHandledVisible(PAGE_SIZE) }}
+          placeholder="센서명 / 내용 검색"
+          aria-label="센서 검색"
+          className="min-w-[12rem] flex-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
+
       {alertsQuery.isLoading ? (
         <p className="text-sm text-text-secondary">알림을 불러오는 중입니다…</p>
       ) : alertsQuery.isError ? (
@@ -116,7 +163,7 @@ export function EnvironmentAlertsPage() {
                 <p className="py-6 text-center text-sm text-text-secondary">처리할 활성 알림이 없습니다.</p>
               ) : (
                 <ul className="space-y-2">
-                  {activeAlerts.map((alert) => (
+                  {activeAlerts.slice(0, activeVisible).map((alert) => (
                     <li key={alert.id}>
                       <button
                         type="button"
@@ -140,6 +187,15 @@ export function EnvironmentAlertsPage() {
                   ))}
                 </ul>
               )}
+              {activeAlerts.length > activeVisible && (
+                <button
+                  type="button"
+                  onClick={() => setActiveVisible((current) => current + PAGE_SIZE)}
+                  className="mt-3 w-full rounded-lg border border-neutral-200 py-2 text-sm text-text-secondary hover:bg-neutral-50"
+                >
+                  더보기 ({activeAlerts.length - activeVisible})
+                </button>
+              )}
             </div>
 
             <div className="rounded-xl border border-neutral-200 bg-white p-5">
@@ -151,7 +207,7 @@ export function EnvironmentAlertsPage() {
                 <p className="py-6 text-center text-sm text-text-secondary">처리된 알림 내역이 없습니다.</p>
               ) : (
                 <ul className="space-y-2">
-                  {handledAlerts.map((alert) => (
+                  {handledAlerts.slice(0, handledVisible).map((alert) => (
                     <li key={alert.id}>
                       <button
                         type="button"
@@ -173,6 +229,15 @@ export function EnvironmentAlertsPage() {
                     </li>
                   ))}
                 </ul>
+              )}
+              {handledAlerts.length > handledVisible && (
+                <button
+                  type="button"
+                  onClick={() => setHandledVisible((current) => current + PAGE_SIZE)}
+                  className="mt-3 w-full rounded-lg border border-neutral-200 py-2 text-sm text-text-secondary hover:bg-neutral-50"
+                >
+                  더보기 ({handledAlerts.length - handledVisible})
+                </button>
               )}
             </div>
           </section>
