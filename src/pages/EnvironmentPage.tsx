@@ -761,7 +761,9 @@ export function EnvironmentPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentReadings.map((row, index) => (
+                  {[...recentReadings]
+                    .sort((a, b) => (b.recordedAt ?? '').localeCompare(a.recordedAt ?? ''))
+                    .map((row, index) => (
                     <tr key={`${row.sensorId}-${row.recordedAt}-${index}`} className="border-b border-neutral-100">
                       <td className="px-3 py-2 text-sm text-text-secondary">{formatDateTime(row.recordedAt)}</td>
                       <td className="px-3 py-2 text-sm text-text-secondary">{row.sensorName ?? row.sensorId}</td>
