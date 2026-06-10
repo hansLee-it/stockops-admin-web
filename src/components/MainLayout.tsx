@@ -12,6 +12,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { AIChatDrawer } from '@/components/ai/AIChatDrawer'
 import {
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine,
   MapPin, LogOut, Clock, Settings,
@@ -409,6 +410,7 @@ export function MainLayout() {
           <span className="text-[11px] mt-0.5 font-medium">더보기</span>
         </button>
       </nav>
+      <AIChatDrawer />
     </div>
   )
 }
