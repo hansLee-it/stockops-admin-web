@@ -8,10 +8,11 @@
 
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, ChevronRight, Database, Key, Loader2, Lock, Pencil, Plus, Settings, Shield, Bell, Trash2, Users } from 'lucide-react'
+import { AlertCircle, Bot, Building2, ChevronRight, Database, Download, Key, Loader2, Package, Pencil, Plus, Settings, Shield, Bell, Trash2, Users, Warehouse } from 'lucide-react'
 import { getAdminErrorMessage } from '@/api/admin'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { useAdminRoles, useAdminUsers, useCreateAdminUser, useDeleteAdminUser, useUpdateAdminUser } from '@/hooks/useAdmin'
+import { useDownloadBackupExport, useGeneralSettings, useIntegrations } from '@/hooks/useSettings'
 import { useAuthStore } from '@/stores/authStore'
 import type { AdminRole, AdminRoleName, AdminUser } from '@/types/admin'
 import type { AuthenticatedUser } from '@/types/auth'
@@ -127,35 +128,99 @@ export function SettingsPage() {
 }
 
 function GeneralSettings() {
+  const settingsQuery = useGeneralSettings()
+  const settings = settingsQuery.data
+
+  if (settingsQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-text-secondary" role="status">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        시스템 정보를 불러오는 중입니다.
+      </div>
+    )
+  }
+
+  if (settingsQuery.isError || !settings) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center" role="alert">
+        <p className="font-medium text-red-800">시스템 정보를 불러오지 못했습니다.</p>
+        <p className="mt-2 text-sm text-red-700">{getAdminErrorMessage(settingsQuery.error, '일반 설정 조회 중 오류가 발생했습니다.')}</p>
+        <button type="button" onClick={() => settingsQuery.refetch()} className="mt-4 px-4 py-2 min-h-[44px] rounded-lg border border-red-300 bg-white text-red-700 hover:bg-red-50">
+          다시 시도
+        </button>
+      </div>
+    )
+  }
+
+  const aiEnabledCount = [settings.bedrockEnabled, settings.vertexEnabled, settings.geminiEnabled].filter(Boolean).length
+
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-text-primary">일반 설정</h2>
+      <div>
+        <h2 className="text-lg font-semibold text-text-primary">일반 설정</h2>
+        <p className="mt-1 text-sm text-text-secondary">시스템 현황 및 환경 정보를 확인합니다.</p>
+      </div>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-        <div className="flex items-start gap-3">
-          <Lock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-          <div>
-            <h3 className="font-semibold text-amber-900">일반 설정 저장은 아직 지원하지 않습니다.</h3>
-            <p className="mt-2 text-sm text-amber-800">
-              현재 백엔드에 `/api/v1/settings` 또는 일반 설정 컨트롤러가 없어 창고 정보, 언어, 시간대 값을 불러오거나 저장할 수 없습니다.
-              임시 값을 입력받는 대신 실제 계약이 추가될 때까지 이 영역을 비활성화합니다.
-            </p>
+      <div>
+        <h3 className="text-sm font-medium text-text-secondary mb-3">마스터 데이터 현황</h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {[
+            { label: '사용자', value: settings.userCount, icon: Users },
+            { label: '센터', value: settings.centerCount, icon: Building2 },
+            { label: '창고', value: settings.warehouseCount, icon: Warehouse },
+            { label: '상품', value: settings.productCount, icon: Package },
+            { label: '구매 주문', value: settings.purchaseOrderCount, icon: Database },
+          ].map(({ label, value, icon: Icon }) => (
+            <div key={label} className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+              <div className="flex items-center gap-2 text-text-secondary mb-1">
+                <Icon className="h-4 w-4" />
+                <span className="text-xs font-medium">{label}</span>
+              </div>
+              <p className="text-2xl font-bold text-text-primary">{value.toLocaleString()}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-medium text-text-secondary mb-3">시스템 환경</h3>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+            <p className="text-xs font-medium text-text-secondary mb-1">비즈니스 타임존</p>
+            <p className="font-medium text-text-primary">{settings.businessZone}</p>
+          </div>
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+            <p className="text-xs font-medium text-text-secondary mb-1">활성 프로파일</p>
+            <p className="font-medium text-text-primary uppercase">{settings.activeProfile}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {[
-          { label: '창고 정보', detail: '센터/창고 관리 API 계약에서 제공될 때 표시합니다.' },
-          { label: '언어 및 시간대', detail: '일반 설정 저장 계약이 없어 변경할 수 없습니다.' },
-          { label: '운영 정책', detail: '정책 조회/수정 엔드포인트가 확정되면 연결합니다.' },
-          { label: '저장/초기화', detail: '지원되는 저장 API가 없어 버튼을 제공하지 않습니다.' },
-        ].map((item) => (
-          <div key={item.label} className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 opacity-80" aria-disabled="true">
-            <p className="font-medium text-text-primary">{item.label}</p>
-            <p className="mt-1 text-sm text-text-secondary">{item.detail}</p>
-          </div>
-        ))}
+      <div>
+        <h3 className="text-sm font-medium text-text-secondary mb-3">AI 서비스 상태</h3>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: 'AWS Bedrock', enabled: settings.bedrockEnabled },
+            { label: 'Vertex AI', enabled: settings.vertexEnabled },
+            { label: 'Gemini', enabled: settings.geminiEnabled },
+          ].map(({ label, enabled }) => (
+            <span
+              key={label}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${
+                enabled
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-neutral-100 text-neutral-500'
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${enabled ? 'bg-green-500' : 'bg-neutral-400'}`} />
+              {label}
+              <span className="font-normal">{enabled ? '활성' : '비활성'}</span>
+            </span>
+          ))}
+        </div>
+        {aiEnabledCount === 0 && (
+          <p className="mt-2 text-xs text-text-secondary">AI 서비스는 환경변수로 활성화합니다. 설정 방법은 배포 문서를 참고하세요.</p>
+        )}
       </div>
     </div>
   )
@@ -620,71 +685,204 @@ function NotificationsSettings() {
 }
 
 function ApiSettings() {
+  const integrationsQuery = useIntegrations()
+  const integrations = integrationsQuery.data
+
+  if (integrationsQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-text-secondary" role="status">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        연동 정보를 불러오는 중입니다.
+      </div>
+    )
+  }
+
+  if (integrationsQuery.isError || !integrations) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center" role="alert">
+        <p className="font-medium text-red-800">연동 정보를 불러오지 못했습니다.</p>
+        <p className="mt-2 text-sm text-red-700">{getAdminErrorMessage(integrationsQuery.error, '연동 설정 조회 중 오류가 발생했습니다.')}</p>
+        <button type="button" onClick={() => integrationsQuery.refetch()} className="mt-4 px-4 py-2 min-h-[44px] rounded-lg border border-red-300 bg-white text-red-700 hover:bg-red-50">
+          다시 시도
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-text-primary">API 및 연동</h2>
+      <div>
+        <h2 className="text-lg font-semibold text-text-primary">API 및 연동</h2>
+        <p className="mt-1 text-sm text-text-secondary">AI 프로바이더 및 외부 서비스 연동 현황입니다. 설정 변경은 환경변수로 관리됩니다.</p>
+      </div>
 
-      <div className="space-y-4">
-        <div className="form-section">
-          <h3 className="text-sm font-medium text-text-secondary mb-3">API 키</h3>
-          <div className="space-y-3">
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-              <p className="font-medium text-text-primary">운영 API 키</p>
-              <p className="mt-1 text-sm text-text-secondary">API 키 관리 백엔드 계약이 없어 생성, 조회, 폐기를 지원하지 않습니다. 실제 키 값이나 상태를 임시로 표시하지 않습니다.</p>
+      <div>
+        <h3 className="text-sm font-medium text-text-secondary mb-3">AI 프로바이더</h3>
+        <div className="space-y-3">
+          <div className={`rounded-lg border p-4 ${integrations.bedrock.enabled ? 'border-green-200 bg-green-50' : 'border-neutral-200 bg-neutral-50'}`}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Bot className={`h-5 w-5 ${integrations.bedrock.enabled ? 'text-green-600' : 'text-neutral-400'}`} />
+                <div>
+                  <p className="font-medium text-text-primary">AWS Bedrock</p>
+                  <p className="text-xs text-text-secondary mt-0.5">IAM 인증 · 생성형 AI 추천 및 운영 요약</p>
+                </div>
+              </div>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${integrations.bedrock.enabled ? 'bg-green-100 text-green-800' : 'bg-neutral-100 text-neutral-500'}`}>
+                {integrations.bedrock.enabled ? '활성' : '비활성'}
+              </span>
             </div>
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-              <p className="font-medium text-text-primary">테스트 API 키</p>
-              <p className="mt-1 text-sm text-text-secondary">테스트 키 관리 엔드포인트가 확인되지 않아 비활성화했습니다.</p>
+            {integrations.bedrock.enabled && (
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm border-t border-green-200 pt-3">
+                <div>
+                  <span className="text-text-secondary">리전: </span>
+                  <span className="font-medium text-text-primary">{integrations.bedrock.region || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-text-secondary">모델: </span>
+                  <span className="font-medium text-text-primary break-all">{integrations.bedrock.modelReference || '미설정'}</span>
+                </div>
+                <div>
+                  <span className="text-text-secondary">지식 베이스: </span>
+                  <span className={`font-medium ${integrations.bedrock.hasKnowledgeBase ? 'text-green-700' : 'text-neutral-400'}`}>
+                    {integrations.bedrock.hasKnowledgeBase ? '연결됨' : '미설정'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-text-secondary">에이전트: </span>
+                  <span className={`font-medium ${integrations.bedrock.hasAgent ? 'text-green-700' : 'text-neutral-400'}`}>
+                    {integrations.bedrock.hasAgent ? '연결됨' : '미설정'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={`rounded-lg border p-4 ${integrations.vertex.enabled ? 'border-green-200 bg-green-50' : 'border-neutral-200 bg-neutral-50'}`}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Bot className={`h-5 w-5 ${integrations.vertex.enabled ? 'text-green-600' : 'text-neutral-400'}`} />
+                <div>
+                  <p className="font-medium text-text-primary">Vertex AI (GCP)</p>
+                  <p className="text-xs text-text-secondary mt-0.5">서비스 계정 인증 · 폴백 AI 프로바이더</p>
+                </div>
+              </div>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${integrations.vertex.enabled ? 'bg-green-100 text-green-800' : 'bg-neutral-100 text-neutral-500'}`}>
+                {integrations.vertex.enabled ? '활성' : '비활성'}
+              </span>
             </div>
+            {integrations.vertex.enabled && (
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm border-t border-green-200 pt-3">
+                <div>
+                  <span className="text-text-secondary">위치: </span>
+                  <span className="font-medium text-text-primary">{integrations.vertex.location || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-text-secondary">모델: </span>
+                  <span className="font-medium text-text-primary">{integrations.vertex.modelId || '-'}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-text-secondary">서비스 계정: </span>
+                  <span className={`font-medium ${integrations.vertex.hasCredentials ? 'text-green-700' : 'text-amber-600'}`}>
+                    {integrations.vertex.hasCredentials ? '설정됨' : '미설정 (STOCKOPS_VERTEX_AI_CREDENTIALS_JSON 환경변수 필요)'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={`rounded-lg border p-4 ${integrations.gemini.enabled ? 'border-green-200 bg-green-50' : 'border-neutral-200 bg-neutral-50'}`}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Bot className={`h-5 w-5 ${integrations.gemini.enabled ? 'text-green-600' : 'text-neutral-400'}`} />
+                <div>
+                  <p className="font-medium text-text-primary">Google Gemini</p>
+                  <p className="text-xs text-text-secondary mt-0.5">API 키 인증</p>
+                </div>
+              </div>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${integrations.gemini.enabled ? 'bg-green-100 text-green-800' : 'bg-neutral-100 text-neutral-500'}`}>
+                {integrations.gemini.enabled ? '활성' : '비활성'}
+              </span>
+            </div>
+            {integrations.gemini.enabled && (
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm border-t border-green-200 pt-3">
+                <div>
+                  <span className="text-text-secondary">모델: </span>
+                  <span className="font-medium text-text-primary">{integrations.gemini.modelName || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-text-secondary">API 키: </span>
+                  <span className={`font-medium ${integrations.gemini.hasApiKey ? 'text-green-700' : 'text-amber-600'}`}>
+                    {integrations.gemini.hasApiKey ? '설정됨' : '미설정 (GEMINI_API_KEY 환경변수 필요)'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        <div className="form-section">
-          <h3 className="text-sm font-medium text-text-secondary mb-3">외부 연동</h3>
-          <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-4">
-            <p className="font-medium text-text-primary">외부 연동 관리는 아직 지원하지 않습니다.</p>
-            <p className="mt-1 text-sm text-text-secondary">
-              API 키/외부 연동 관리 계약이 확정되기 전까지 연결 상태나 설정 버튼을 표시하지 않습니다.
-            </p>
-          </div>
-        </div>
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+        AI 설정(모델 ID, 리전, 자격 증명 등)은 환경변수로 관리됩니다. 변경 후 서버 재시작이 필요합니다.
+        설정 가능한 환경변수 목록은 배포 문서를 참고하세요.
       </div>
     </div>
   )
 }
 
 function BackupSettings() {
+  const exportMutation = useDownloadBackupExport()
+
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-text-primary">백업 및 복구</h2>
+      <div>
+        <h2 className="text-lg font-semibold text-text-primary">백업 및 복구</h2>
+        <p className="mt-1 text-sm text-text-secondary">마스터 데이터를 JSON 파일로 내보냅니다.</p>
+      </div>
 
-      <div className="space-y-6">
-        <div className="p-4 bg-neutral-50 rounded-lg">
-          <h3 className="text-sm font-medium text-text-secondary mb-3">자동 백업</h3>
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div>
-              <p className="text-xs text-text-light">마지막 백업</p>
-              <p className="font-medium">연동 안 됨</p>
-            </div>
-            <div>
-              <p className="text-xs text-text-light">다음 백업</p>
-              <p className="font-medium">예약 없음</p>
-            </div>
-            <div>
-              <p className="text-xs text-text-light">백업 주기</p>
-              <p className="font-medium">미설정</p>
-            </div>
-          </div>
-          <p className="text-sm text-text-secondary">
-            백업/복구 API 계약이 없어 백업 실행, 복구, 스케줄 변경을 지원하지 않습니다. 실제 백업 상태를 임시 데이터로 표시하지 않습니다.
-          </p>
+      {exportMutation.isError && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{getAdminErrorMessage(exportMutation.error, '내보내기 중 오류가 발생했습니다.')}</span>
         </div>
+      )}
 
-        <div>
-          <h3 className="text-sm font-medium text-text-secondary mb-3">백업 이력</h3>
-          <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-text-secondary">
-            백업 기록이 없습니다. 연결된 백업 서비스에서 생성된 내역만 표시됩니다.
+      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-5">
+        <div className="flex items-start gap-3">
+          <Download className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
+          <div className="flex-1">
+            <p className="font-medium text-text-primary">데이터 내보내기</p>
+            <p className="mt-1 text-sm text-text-secondary">센터, 창고, 역할 마스터 데이터를 JSON 파일로 다운로드합니다.</p>
+            <ul className="mt-2 text-xs text-text-secondary list-disc list-inside space-y-0.5">
+              <li>포함: 센터 목록, 창고 목록, 역할 정의</li>
+              <li>미포함: 재고 현황, 주문 이력, 센서 데이터 (대용량 트랜잭션 데이터)</li>
+            </ul>
           </div>
+          <button
+            type="button"
+            onClick={() => exportMutation.mutate()}
+            disabled={exportMutation.isPending}
+            className="inline-flex shrink-0 items-center gap-2 px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-60"
+          >
+            {exportMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                내보내는 중...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                내보내기
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-medium text-text-secondary mb-3">자동 백업 및 복구</h3>
+        <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-text-secondary">
+          자동 백업 스케줄 및 복구 기능은 DB 레벨 백업(pg_dump, RDS 스냅샷 등)으로 운영하세요. 애플리케이션 레벨 자동 백업 API는 아직 지원하지 않습니다.
         </div>
       </div>
     </div>
