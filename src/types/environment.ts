@@ -155,18 +155,23 @@ export interface ControllerCommandRequest {
 }
 
 /**
- * Live sensor measurement received directly over MQTT (WebSocket transport) by admin-web.
- * Matches the Sensimul live telemetry payload that the API server previously ingested.
+ * Single cached reading point served by the recent sensor readings API.
+ * Values come from the API server's shared Redis recent-reading window.
  */
-export interface MqttSensorPayload {
-  siteId: string
-  sensorId: string
-  sensorType?: SensorType | string
-  valueKind?: string | null
-  value: number
-  unit?: string | null
-  status: string
-  timestamp: string
-  sequenceId?: number
-  schemaVersion?: string
+export interface RecentSensorReadingPoint {
+  value: number | null
+  valueKind: string | null
+  unit: string | null
+  status: string | null
+  recordedAt: string | null
+  sequenceId: number | null
+}
+
+/**
+ * Recent sensor readings API response.
+ */
+export interface RecentSensorReadingsResponse {
+  sensorId: number
+  windowMinutes: number
+  readings: RecentSensorReadingPoint[]
 }
